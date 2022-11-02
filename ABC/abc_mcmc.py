@@ -65,7 +65,7 @@ if __name__ == "__main__":
         pdf = gaussian_pdf(y, t.tensor(sigma**2))
         return pdf(x)
 
-    def calc_distance(X: t.Tensor, Y_sim: t.Tensor, Y_obs: t.Tensor) -> float:
+    def calc_distance(X: t.Tensor, Y_sim: t.Tensor, Y_obs: t.Tensor) -> t.Tensor:
         if random.random() > 0.5:
             return t.abs(t.mean(Y_sim))
         else:
@@ -79,17 +79,17 @@ if __name__ == "__main__":
 
     def calc_alpha(
         theta_star: t.Tensor, theta: t.Tensor, epsilon: float, dist: t.Tensor
-    ) -> float:
+    ) -> t.Tensor:
         if dist <= epsilon and uniform_likelihood(-10, 10, theta_star) > 0:
             ratio = gauss_likelihood(theta, theta_star) / gauss_likelihood(
                 theta_star, theta
             )
             return t.min(t.tensor([t.tensor(1.0), ratio]))
         else:
-            return 0
+            return t.tensor(0.0)
 
     # according to the paper, the dataset should be 100 samples drawn from N(theta,1)
-    def model(X, theta):
+    def model(X, theta) -> t.Tensor:
         n = normal.Normal(theta, 1)
         return n.sample_n(100)
 
