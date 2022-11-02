@@ -35,8 +35,11 @@ def abc_rej(
         theta: A sample from the posterior p(theta|Y_obs).
         num_stps: The amount of sampling steps necessary to produce the accepted sample.
     """
+    # track the number of sampling steps necessary to produce a valid sample
     num_steps = 1
+    # initialize theta
     theta = None
+    # start the algorithm
     while True:
         # Sample theta from the prior distribution over theta
         theta = prior()
@@ -90,16 +93,17 @@ if __name__ == "__main__":
         f"average # steps for acceptance: {t.mean(t.tensor(required_steps, dtype=t.float))}"
     )
 
-    # Visualize the results and compare to the expected posterior
+    # define the expected posterior for reference
     pdf_1 = gaussian_pdf(t.tensor(0), t.tensor(1 / 100))
     pdf_2 = gaussian_pdf(t.tensor(0), t.tensor(1))
 
+    # expected posterior density function according to the paper
     def posterior(theta: t.Tensor) -> t.Tensor:
         return (1 / 2) * pdf_1(theta) + (1 / 2) * pdf_2(theta)
 
-    thetas = t.linspace(-3, 3, 100)
-
-    n, bins, _ = plt.hist(t.tensor(samples), density=True, bins=30)
-    plt.plot(thetas, [posterior(theta) for theta in thetas], color="red")
+    # visualize the results
+    plt.hist(t.tensor(samples), density=True, bins=30)
+    theta_ref = t.linspace(-3, 3, 100)
+    plt.plot(theta_ref, [posterior(ref) for ref in theta_ref], color="red")
     plt.xlim(-4, 4)
     plt.show()
