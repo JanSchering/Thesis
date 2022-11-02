@@ -72,6 +72,9 @@ def abc_mcmc(
 
 
 if __name__ == "__main__":
+    """
+    Test ABC-MCMC on the toy example defined in https://www.pnas.org/doi/pdf/10.1073/pnas.0607208104
+    """
     sigma = t.tensor(0.15)
     epsilon = 0.025
     theta_init = t.tensor(0.0)

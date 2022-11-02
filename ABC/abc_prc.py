@@ -4,6 +4,7 @@ from torch.distributions import normal, uniform
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import random
+from helpers import gaussian_pdf
 
 Sampler = Callable[[], t.Tensor]
 Input = t.Tensor
@@ -17,11 +18,23 @@ def abc_prc(
     Y_obs: t.Tensor,
     model: Callable[[Input, Parameters], Output],
     mu_1: Sampler,
-    kernel: Callable,
-    distance_func: Callable,
+    kernel: Callable[[t.Tensor], t.Tensor],
+    distance_func: Callable[[Input, t.Tensor, t.Tensor], t.Tensor],
     epsilons: List[float],
     N: int,
-) -> Tuple[t.Tensor, List[List[float]]]:
+) -> Tuple[t.Tensor, List[t.Tensor]]:
+    """
+    Perform approximate Bayesian computation through Sequential Monte Carlo with Particle
+    Rejection Control as defined in https://www.pnas.org/doi/pdf/10.1073/pnas.0607208104.
+
+    X:              The Model inputs.
+    Y_obs:          The observed outputs (based on the inputs).
+    model:          The Model.
+    mu_1:           Initial sampling distribution over theta.
+    kernel:         Markov transition kernel to move theta.
+    distance_func:  Calculates the distance between two sets of observations (given a set of inputs).
+    epsilons:       A list of increasingly stricter distance thresholds.
+    """
     thetas = mu_1(1000)
     theta_hist = [thetas.detach().clone().numpy()]
     for _, epsilon in enumerate(tqdm(epsilons)):
@@ -43,6 +56,9 @@ def abc_prc(
 
 
 if __name__ == "__main__":
+    """
+    Test ABC-PRC on the toy example defined in https://www.pnas.org/doi/pdf/10.1073/pnas.0607208104
+    """
     # Define the initial sampler
     mu_1 = uniform.Uniform(t.tensor(-10.0), t.tensor(10.0)).sample_n
 
@@ -67,16 +83,37 @@ if __name__ == "__main__":
         None, None, model, mu_1, kernel, distance_func, epsilons, N
     )
 
+    # define the expected posterior for reference
+    pdf_1 = gaussian_pdf(t.tensor(0), t.tensor(1 / 100))
+    pdf_2 = gaussian_pdf(t.tensor(0), t.tensor(1))
+
+    def posterior(theta: float) -> float:
+        return (1 / 2) * pdf_1(theta) + (1 / 2) * pdf_2(theta)
+
+    test_vals = t.linspace(-3, 3, 100)
+
     fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
 
     axs[0, 0].hist(theta_hist[0], density=True, bins=30)
     axs[0, 0].set(ylabel="density", title="Population 0")
+    axs[0, 0].plot(
+        test_vals, [posterior(test_val) for test_val in test_vals], color="red"
+    )
     axs[0, 1].hist(theta_hist[1], density=True, bins=30)
     axs[0, 1].set(title="Population 1")
+    axs[0, 1].plot(
+        test_vals, [posterior(test_val) for test_val in test_vals], color="red"
+    )
     axs[1, 0].hist(theta_hist[2], density=True, bins=30)
     axs[1, 0].set(xlabel="theta", ylabel="density", title="Population 2")
+    axs[1, 0].plot(
+        test_vals, [posterior(test_val) for test_val in test_vals], color="red"
+    )
     axs[1, 1].hist(theta_hist[3], density=True, bins=30)
     axs[1, 1].set(xlabel="theta", title="Population 3")
+    axs[1, 1].plot(
+        test_vals, [posterior(test_val) for test_val in test_vals], color="red"
+    )
 
     plt.xlim(-3, 3)
     plt.show()
