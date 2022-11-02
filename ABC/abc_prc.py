@@ -12,7 +12,7 @@ Parameters = t.Tensor
 Output = t.Tensor
 
 
-def ABC_PRC(
+def abc_prc(
     X: t.Tensor,
     Y_obs: t.Tensor,
     model: Callable[[Input, Parameters], Output],
@@ -21,7 +21,7 @@ def ABC_PRC(
     distance_func: Callable,
     epsilons: List[float],
     N: int,
-) -> Tuple[List[float], List[List[float]]]:
+) -> Tuple[t.Tensor, List[List[float]]]:
     thetas = mu_1(1000)
     theta_hist = [thetas.detach().clone().numpy()]
     for _, epsilon in enumerate(tqdm(epsilons)):
@@ -46,24 +46,24 @@ if __name__ == "__main__":
     # Define the initial sampler
     mu_1 = uniform.Uniform(t.tensor(-10.0), t.tensor(10.0)).sample_n
 
-    def distance_func(X: t.tensor, Y_sim: t.tensor, Y_obs: t.tensor) -> t.Tensor:
+    def distance_func(X: t.Tensor, Y_sim: t.Tensor, Y_obs: t.Tensor) -> t.Tensor:
         if random.random() > 0.5:
             return t.abs(t.mean(Y_sim))
         else:
             return t.abs(Y_sim[0])
 
     # according to the paper, the dataset should be 100 samples drawn from N(theta,1)
-    def model(X: t.tensor, theta: t.tensor) -> t.Tensor:
+    def model(X: t.Tensor, theta: t.Tensor) -> t.Tensor:
         n = normal.Normal(theta, 1.0)
         return n.sample_n(100)
 
-    def kernel(theta: t.tensor) -> t.Tensor:
+    def kernel(theta: t.Tensor) -> t.Tensor:
         return normal.Normal(theta, t.tensor(1.0)).sample()
 
     N = 1000
     epsilons = [2, 0.5, 0.025]
 
-    thetas, theta_hist = ABC_PRC(
+    thetas, theta_hist = abc_prc(
         None, None, model, mu_1, kernel, distance_func, epsilons, N
     )
 

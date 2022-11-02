@@ -8,7 +8,7 @@ from helpers import gaussian_pdf
 import matplotlib.pyplot as plt
 
 
-def ABC_MCMC(
+def abc_mcmc(
     X: t.Tensor,
     Y_obs: t.Tensor,
     theta: t.Tensor,
@@ -16,8 +16,8 @@ def ABC_MCMC(
     distance_func: Callable,
     calc_acceptance_rate: Callable,
     epsilon: float,
-    N: int,
     q: Callable,
+    N: int,
 ):
     # List of all accepted theta values
     thetas = [theta]
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         return normal.Normal(theta, sigma).sample()
 
     def gauss_likelihood(x: t.Tensor, y: t.Tensor) -> float:
-        pdf = gaussian_pdf(y, t.tensor(sigma**2))
+        pdf = gaussian_pdf(y, sigma**2)
         return pdf(x)
 
     def calc_distance(X: t.Tensor, Y_sim: t.Tensor, Y_obs: t.Tensor) -> t.Tensor:
@@ -93,8 +93,8 @@ if __name__ == "__main__":
         n = normal.Normal(theta, 1)
         return n.sample_n(100)
 
-    thetas, theta_hist, step_hist = ABC_MCMC(
-        None, None, theta_init, model, calc_distance, calc_alpha, epsilon, N, q
+    thetas, theta_hist, step_hist = abc_mcmc(
+        None, None, theta_init, model, calc_distance, calc_alpha, epsilon, q, N
     )
 
     print(f"accepted {len(thetas)} samples")
