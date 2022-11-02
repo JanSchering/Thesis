@@ -1,16 +1,22 @@
-#%%
 from typing import Callable
 import numpy as np
 import torch as t
 import matplotlib.pyplot as plt
 
+
 def gaussian_pdf(mu: t.Tensor, sigma_sq: t.Tensor) -> Callable:
+    """
+    Produces a PDF for a Gaussian normal distribution N(<mu>, sqrt(<sigma_sq>)).
+    mu: Mean of the distribution
+
+    sigma_sq: variance of the distribution
+    """
     # assume scalar mean
     assert mu.numel() == 1
     # assume scalar variance
     assert sigma_sq.numel() == 1
 
-    def pdf(x: t.Tensor) -> float:
+    def pdf(x: t.Tensor) -> t.Tensor:
         """
         Calculate the probability density at points <x> for a Gaussian distribution
         N(<mu>,<sigma>)
@@ -23,7 +29,11 @@ def gaussian_pdf(mu: t.Tensor, sigma_sq: t.Tensor) -> Callable:
 
     return pdf
 
+
 if __name__ == "__main__":
+    """
+    Visualize the PDF with different mean and variance values.
+    """
     print("test the gaussian pdf function")
     pdf_1 = gaussian_pdf(t.tensor(0), t.tensor(1))
     pdf_2 = gaussian_pdf(t.tensor(0), t.tensor(0.2))
@@ -37,5 +47,3 @@ if __name__ == "__main__":
     plt.plot(x, y3, label="mu:1, sigma^2:5")
     plt.legend()
     plt.show()
-
-# %%
