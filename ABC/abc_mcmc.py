@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Tuple, List
 import torch as t
 import numpy as np
 from tqdm import tqdm
@@ -7,22 +7,41 @@ from torch.distributions import normal
 from helpers import gaussian_pdf
 import matplotlib.pyplot as plt
 
+Sampler = Callable[[], t.Tensor]
+Input = t.Tensor
+Observations = t.Tensor
+Parameters = t.Tensor
+Output = t.Tensor
+
 
 def abc_mcmc(
     X: t.Tensor,
     Y_obs: t.Tensor,
     theta: t.Tensor,
-    model: Callable,
-    distance_func: Callable,
+    model: Callable[[Input, Parameters], Output],
+    distance_func: Callable[[Input, t.Tensor, t.Tensor], t.Tensor],
     calc_acceptance_rate: Callable,
     epsilon: float,
-    q: Callable,
+    q: Callable[[t.Tensor], t.Tensor],
     N: int,
-):
+) -> Tuple[List[np.ndarray], List[np.ndarray], List[float]]:
+    """
+    Perform approximate Bayesian computation via Markov Chain Monte Carlo sampling.
+
+    X:                      The Model inputs.
+    Y_obs:                  The observed outputs produced from the inputs.
+    theta:                  The Model parameters.
+    model:                  The Model.
+    distance_func:          Calculates the distance between two given sets of observations (given the inputs).
+    calc_acceptance_rate:   Calculates the (e.g. Metropolis-Hastings) acceptance rate for drawn samples to correct for bias.
+    epsilon:                The upper threshold on the distance.
+    q:                      Proposal distribution from which proposal thetas can be sampled.
+    N:                      The number of MCMC iterations to run
+    """
     # List of all accepted theta values
-    thetas = [theta]
+    thetas = [theta.detach().clone().numpy()]
     # History of all thetas
-    theta_hist = [theta]
+    theta_hist = [theta.detach().clone().numpy()]
     # Track how many steps are necessary to generate an accepted sample
     steps = 1
     # History of necessary steps per sample
@@ -40,15 +59,15 @@ def abc_mcmc(
         # With probability <alpha>, accept theta*
         if random.random() <= alpha:
             # theta_i+1 = theta*
-            theta = theta_star
+            theta = theta_star.detach().clone()
             # collect the sample
-            thetas.append(theta)
+            thetas.append(theta_star.detach().clone().numpy())
             # track the number of steps
             step_hist.append(steps)
             steps = 1
         else:
             steps += 1
-        theta_hist.append(theta)
+        theta_hist.append(theta.detach().clone().numpy())
     return thetas, theta_hist, step_hist
 
 
@@ -61,7 +80,7 @@ if __name__ == "__main__":
     def q(theta: t.Tensor):
         return normal.Normal(theta, sigma).sample()
 
-    def gauss_likelihood(x: t.Tensor, y: t.Tensor) -> float:
+    def gauss_likelihood(x: t.Tensor, y: t.Tensor) -> t.Tensor:
         pdf = gaussian_pdf(y, sigma**2)
         return pdf(x)
 
@@ -111,6 +130,6 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(2)
     axs[0].hist(thetas, density=True, bins=30)
     axs[0].plot(test_vals, [posterior(test_val) for test_val in test_vals], color="red")
-    axs[1].plot(np.arange(len(thetas)), thetas)
+    axs[1].plot(np.arange(len(theta_hist)), theta_hist)
     axs.flat[0].set_xlim(-4, 4)
     plt.show()
