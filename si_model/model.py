@@ -1,5 +1,5 @@
 import torch as t
-from spread_likelihood import calculate_spread_likelihood
+from likelihoods import spread_likelihood
 from vis_utils import visualize_sequence, visualize_batch
 
 
@@ -12,7 +12,7 @@ def init_grids(size: int, batch_size: int) -> t.Tensor:
 def model(grids: t.Tensor, beta: t.Tensor) -> t.Tensor:
     healthy_mask = grids == 0
 
-    likelihoods = calculate_spread_likelihood(grids, beta)
+    likelihoods = spread_likelihood(grids, beta)
     infection_update = t.rand(*grids.shape) <= likelihoods * healthy_mask
     return grids + infection_update.detach().clone().numpy().astype(int)
 

@@ -1,26 +1,19 @@
 import torch as t
-from risk_conv import risk_convolution2D
+from likelihoods import spread_likelihood, transition_likelihood
 
 
-def calculate_spread_likelihood(batch: t.Tensor, beta: t.Tensor):
-    """
-    calculates the likelihood of each cell in the batch transitioning to an
-    activated state at the next time step:
-    1-(1-ß)^N_k(n)
-    """
-    risk_conv = risk_convolution2D(batch).squeeze(1)
-    return 1.0 - (1.0 - beta) ** risk_conv
+def init_test_grids(size, batch_size):
+    batch = t.zeros((batch_size, size, size))
+    batch[:, size // 2, size // 2] = 1
+    return batch
 
 
-if __name__ == "__main__":
-    print("testing the spread likelihood function...")
+def test_spread_likelihood_1():
     size = 9
     batch_size = 2
     beta = 0.35
 
-    batch = t.zeros((batch_size, size, size))
-    batch[:, size // 2, size // 2] = 1
-
+    batch = init_test_grids(size, batch_size)
     batch[0, 0, 0] = 1
     batch[0, 0, 1] = 1
     batch[0, 0, 2] = 1
@@ -30,7 +23,7 @@ if __name__ == "__main__":
     batch[0, 2, 1] = 1
     batch[0, 2, 2] = 1
 
-    likelihoods = calculate_spread_likelihood(batch, beta)
+    likelihoods = spread_likelihood(batch, beta)
 
     def likelihood(beta, n):
         return 1 - (1 - beta) ** n
@@ -53,5 +46,3 @@ if __name__ == "__main__":
     assert "{:0.4f}".format(likelihoods[0, -1, 1]) == "{:0.4f}".format(
         likelihood(beta, 3)
     )
-
-    print("all tests passed successfully.")

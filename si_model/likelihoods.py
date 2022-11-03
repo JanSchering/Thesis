@@ -1,0 +1,28 @@
+import torch as t
+from risk_conv import risk_convolution2D
+
+
+def spread_likelihood(batch: t.Tensor, beta: t.Tensor):
+    """
+    calculates the likelihood of each cell in the batch transitioning to an
+    activated state at the next time step:
+    1-(1-ß)^N_k(n)
+    """
+    risk_conv = risk_convolution2D(batch).squeeze(1)
+    return 1.0 - (1.0 - beta) ** risk_conv
+
+
+def transition_likelihood(
+    spread_likelihood: t.Tensor, x_t: t.Tensor, x_tt: t.Tensor
+) -> t.Tensor:
+    """
+    Returns the cell-wise likelihood of transitioning from state <x_t> to state <x_tt> given a
+    spread-likelihood matrix <spread_likelihood>.
+
+    spread_likelihood:  The cell-wise likelihood for becoming/being infected at the next time step.
+    x_t:                The input state (time t).
+    x_tt:               The output stateof (time t+1).
+    """
+    return (1 - x_t) * (1 - x_tt) * (1 - spread_likelihood) + (
+        x_tt * spread_likelihood * (1 - x_t) + x_t
+    )
