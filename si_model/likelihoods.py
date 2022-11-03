@@ -31,9 +31,12 @@ def transition_likelihood(
 def total_likelihood(transition_likelihood: t.Tensor) -> t.Tensor:
     """
     Calculate the element-wise product along the spatial dimensions (-1, -2) of the matrix.
-
-    x_t (np.ndarray): The previous state of the grid (time step t).
-    x_tt (np.ndarray): The current state of the grid (time step t+1).
-    beta (float): The diffusion coefficient of the PCA.
     """
     return t.sum(t.prod(t.prod(transition_likelihood, dim=-1), dim=-1))
+
+
+def neg_log_likelihood(transition_likelihood: t.Tensor) -> float:
+    """
+    Calculate the negative log-likelihood of the dataset.
+    """
+    return -t.sum(t.log(transition_likelihood))
