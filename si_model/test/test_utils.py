@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, "../")
 import torch as t
 import numpy as np
 from utils import chop_and_shuffle_data

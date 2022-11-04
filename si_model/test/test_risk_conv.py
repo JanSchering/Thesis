@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '../')
 import torch as t
 from risk_conv import risk_convolution2D
 

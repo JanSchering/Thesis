@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, "../")
 import torch as t
 from periodic_padding import periodic_padding
 

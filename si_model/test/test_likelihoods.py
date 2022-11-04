@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '../')
 import torch as t
 from likelihoods import spread_likelihood, transition_likelihood, total_likelihood
 
