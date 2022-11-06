@@ -15,6 +15,8 @@ def risk_convolution2D(batch: t.Tensor):
     """
     kernel = t.ones((1, 1, 3, 3)).float()
     kernel[:, :, 1, 1] = 0
+    if batch.is_cuda:
+        kernel = kernel.cuda()
     padded_grid = periodic_padding(batch).float()
     expanded = t.unsqueeze(padded_grid, -1)
     transposed = t.permute(expanded, (0, 3, 1, 2))
