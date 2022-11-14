@@ -54,6 +54,7 @@ def excite_particles(state: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
         .reshape(2, grid_dim, grid_dim)
     )
     E = t.heaviside(state - N * Xi, values=t.zeros(state.shape))
+    E[state==0] = 0
     return state - E, E
 
 
