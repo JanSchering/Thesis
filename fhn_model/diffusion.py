@@ -53,8 +53,13 @@ def excite_particles(state: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
         .sample_n(2 * (grid_dim**2))
         .reshape(2, grid_dim, grid_dim)
     )
-    E = t.heaviside(state - N * Xi, values=t.zeros(state.shape))
-    E[state==0] = 0
+    edge_vals = t.zeros(state.shape)
+    if state.is_cuda:
+        Xi = Xi.cuda()
+        edge_vals = edge_vals.cuda()
+    E = t.heaviside(state - N * Xi, values=edge_vals)
+    E[state == 0] = 0
+    E[state == N] = 1
     return state - E, E
 
 
