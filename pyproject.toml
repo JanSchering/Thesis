@@ -1,4 +1,4 @@
 [tool.pytest.ini_options]
 pythonpath = [
-  ".", "si_model"
+  ".", "si_model", "fhn_model"
 ]
