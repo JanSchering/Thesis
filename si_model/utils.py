@@ -23,6 +23,18 @@ def chop_and_shuffle_data(sequences, shuffle=True):
         np.random.shuffle(chopped_set)
     return t.tensor(chopped_set)
 
+def pre_process(data:t.Tensor):
+    dset = data.numpy()
+    mask = np.all(dset[:,0] == 1, axis=(-1,-2))
+
+    num_faulty_entries = mask[mask==True].shape[0]
+    print(f"remove {num_faulty_entries} entries from the dataset")
+
+    dset = np.delete(dset, mask, axis=0)
+    dataset = t.from_numpy(dset)
+
+    print(dataset.size())
+    return dataset
 
 def heaviside(x, k):
     return 1 / (1 + t.exp(-2 * k * x))
