@@ -23,9 +23,10 @@ def adhesion(grid: t.Tensor, cell_id: int, penalties: dict) -> t.Tensor:
     """
     Calculate the adhesion of cell <cell_id> on the grid given some <penalties>.
 
-    grid:       The CPM lattice.
-    cell_id:    The ID of the cell to calculate the adhesion energy for.
-    penalties:  penalty J for each interface between <cell_id> and other cell IDs.
+    Args:
+        grid:       The CPM lattice.
+        cell_id:    The ID of the cell to calculate the adhesion energy for.
+        penalties:  penalty J for each interface between <cell_id> and other cell IDs.
     """
     total_adhesion = 0
     for target_id in penalties:
