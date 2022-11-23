@@ -1,6 +1,7 @@
 from typing import List
 import torch as t
 import numpy as np
+import random
 from hamiltonian import nabla_hamiltonian
 from local_types import Cell_Type
 
@@ -16,7 +17,11 @@ def model(
     src_pixel = grid[0, src_row_idx, src_col_idx]
 
     # pick the target cell from the Moore neighborhood of the source cell
-    target_row_idx, target_col_idx = np.random.randint(-1, 2, 2)
+    move_x, move_y = random.choice(
+        [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+    )
+    target_row_idx = src_row_idx + move_x
+    target_col_idx = src_col_idx + move_y
 
     # use periodic torus for cells at the edges
     if target_row_idx == num_rows:
