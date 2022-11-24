@@ -67,6 +67,12 @@ def nabla_hamiltonian(
                 * (perimeter(grid_adjusted, cell["cell_id"]) - target_perimeter) ** 2
             )
 
+    print(f"adhesion current: {adhesion_current}")
+    print(f"adhesion adjusted: {adhesion_adjusted}")
+    print(f"volume current: {volume_h_current}")
+    print(f"volume adjusted: {volume_h_adjusted}")
+    print(f"perimeter current: {perimeter_h_current}")
+    print(f"perimeter adjusted: {perimeter_h_adjusted}")
     nabla_adhesion = adhesion_adjusted - adhesion_current
     nabla_volume = volume_h_adjusted - volume_h_current
     nabla_perimeter = perimeter_h_adjusted - perimeter_h_current
