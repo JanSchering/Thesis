@@ -27,8 +27,7 @@ def nabla_hamiltonian(
         target_id: the ID that is supposed to be copied onto the target pixel.
     """
     grid_adjusted = grid.clone().detach()
-    print("gets here")
-    grid_adjusted[0, row, column] = target_id
+    grid_adjusted[0, row, column] = target_id.clone()
 
     adhesion_current = 0.0
     adhesion_adjusted = 0.0
@@ -44,7 +43,6 @@ def nabla_hamiltonian(
             adhesion_adjusted += adhesion(
                 grid_adjusted, cell["cell_id"], adhesion_penalties
             )
-        print("adhesion successful")
         if use_volume:
             # calculate the volume component of the hamiltonian
             target_volume = cell["target_volume"]
@@ -56,7 +54,6 @@ def nabla_hamiltonian(
                 scaling_factor_v
                 * (volume(grid_adjusted, cell["cell_id"]) - target_volume) ** 2
             )
-        print("volume successful")
         if use_perimeter:
             # calculate the perimeter component of the hamiltonian
             target_perimeter = cell["target_perimeter"]
@@ -65,12 +62,10 @@ def nabla_hamiltonian(
                 scaling_factor_p
                 * (perimeter(grid, cell["cell_id"]) - target_perimeter) ** 2
             )
-            print("first perim successful")
             perimeter_h_adjusted += (
                 scaling_factor_p
                 * (perimeter(grid_adjusted, cell["cell_id"]) - target_perimeter) ** 2
             )
-        print("perimeter successful")
 
     nabla_adhesion = adhesion_adjusted - adhesion_current
     nabla_volume = volume_h_adjusted - volume_h_current

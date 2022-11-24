@@ -14,7 +14,7 @@ def model(
     # pick the source cell
     src_row_idx = np.random.randint(0, num_rows)
     src_col_idx = np.random.randint(0, num_cols)
-    src_pixel = grid[0, src_row_idx, src_col_idx]
+    src_pixel = grid[0, src_row_idx, src_col_idx].clone()
 
     # pick the target cell from the Moore neighborhood of the source cell
     move_x, move_y = random.choice(
@@ -34,7 +34,7 @@ def model(
     elif target_col_idx == -1:
         target_col_idx = num_cols - 1
 
-    target_pixel = grid[0, target_row_idx, target_col_idx]
+    target_pixel = grid[0, target_row_idx, target_col_idx].clone()
 
     # if the cells have the same ID, nothing changes
     if src_pixel == target_pixel:
@@ -44,18 +44,19 @@ def model(
         grid, target_row_idx, target_col_idx, src_pixel, cell_params
     )
 
+    print(f"h_diff: {h_diff}")
+    print(f"src: ({src_row_idx, src_col_idx})")
+    print(f"target: ({target_row_idx, target_col_idx})")
+
     if h_diff <= 0:
-        grid[0, target_row_idx, target_pixel] = src_pixel
+        grid[0, target_row_idx, target_col_idx] = src_pixel
     else:
         p_copy = t.exp(-h_diff / temperature)
+        print(f"p_copy: {p_copy}")
         threshold = t.rand((1))
-        print(
-            p_copy,
-            threshold,
-            p_copy - threshold,
-            (p_copy - threshold) >= 0,
-            ((p_copy - threshold) >= 0).float(),
-            ((p_copy - threshold) >= 0).float().item(),
-        )
-        new_val = ((p_copy - threshold) >= 0).float().item()
-        grid[0, target_row_idx, target_pixel] = new_val
+        copy_success = ((p_copy - threshold) >= 0).float().item()
+        if copy_success:
+            print("copy success!")
+            grid[0, target_row_idx, target_col_idx] = src_pixel
+
+    return grid
