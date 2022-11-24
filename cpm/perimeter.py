@@ -6,8 +6,14 @@ from risk_conv import risk_convolution2D
 
 
 def perimeter(grid: t.Tensor, cell_id: int) -> t.Tensor:
-    """
-    Find the perimeter of the cell <cell_id> on the 2D lattice <grid>.
+    """Find the perimeter of the cell <cell_id> on the 2D lattice <grid>.
+
+    Args:
+        grid (t.Tensor): The lattice.
+        cell_id (int): The ID of the cell to find the perimeter for.
+
+    Returns:
+        t.Tensor: the perimeter of the cell.
     """
     cell_mask = (grid != cell_id).double()
     active_neighbors = risk_convolution2D(cell_mask)
