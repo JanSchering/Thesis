@@ -30,10 +30,20 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
             # new_dim = (new_dim-4)/2+1
             # shape (N,32,new_dim,new_dim)
+            nn.Conv2d(
+                in_channels=32, out_channels=16, kernel_size=4, stride=2, bias=False
+            ),
+            nn.BatchNorm2d(16),
+            nn.LeakyReLU(0.2, inplace=True),
+            # new_dim = (new_dim-4)/2+1
+            # shape (N,16,new_dim,new_dim)
             nn.Flatten(),
             nn.Linear(
-                in_features=32
-                * self.reduce_dim(self.reduce_dim(self.reduce_dim(grid_size))) ** 2,
+                in_features=16
+                * self.reduce_dim(
+                    self.reduce_dim(self.reduce_dim(self.reduce_dim(grid_size)))
+                )
+                ** 2,
                 out_features=10,
             ),
             nn.Linear(in_features=10, out_features=1),
