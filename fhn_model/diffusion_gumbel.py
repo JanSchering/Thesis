@@ -1,3 +1,4 @@
+# %%
 from typing import Tuple
 import torch as t
 from torch.distributions import uniform
@@ -6,18 +7,28 @@ from periodic_padding import periodic_padding
 from ste_func import STEFunction
 
 
-def translate_gumbel(grid: t.Tensor, D: t.Tensor):
+def translate_gumbel(grids: t.Tensor, D: t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
     """Translate grid according to a 9-direction scheme with probabilities based on the
     diffusion coefficient <D>
 
     Args:
+        grids (t.Tensor): Tensor of shape (N_grids,height,width)
         D (t.Tensor): Diffusion coefficient
+
+    Returns:
+        (Tuple[t.Tensor, t.Tensor]): The translated grids + the kernels used for each translation
     """
-    grid = grid.unsqueeze(0)
+    # Get the number of grids in the batch
+    num_grids, height, width = grids.shape
+    # Calculate the log-probability of moving horizontally or vertically
     p_sides = t.log(D * (t.sqrt(t.tensor(2.0)) - 1) * t.sqrt(t.tensor(2.0)) / 4)
+    # Calculate the log-probability of moving along the diagonal
     p_diag = t.log(D * (t.sqrt(t.tensor(2.0)) - 1) / 4)
+    # Calculate the log-probability of not moving
     p_center = t.log(1 - D)
 
+    # build a log-probability matrix that will be used to sample a translation kernel
+    # from the Gumbel-softmax
     kernel_logits = t.zeros((1, 1, 3, 3))
     kernel_logits[:, :, 0, 0] += p_diag
     kernel_logits[:, :, 0, 2] += p_diag
@@ -29,17 +40,50 @@ def translate_gumbel(grid: t.Tensor, D: t.Tensor):
     kernel_logits[:, :, 1, 2] += p_sides
     kernel_logits[:, :, 1, 1] += p_center
 
-    kernel = gumbel_softmax(
-        logits=kernel_logits.flatten(), tau=1.0, hard=True
-    ).unflatten(dim=0, sizes=(1, 1, 3, 3))
-    if grid.is_cuda:
-        kernel = kernel.cuda()
+    # sample a translation kernel for each grid
+    kernels = t.cat(
+        [
+            gumbel_softmax(
+                logits=kernel_logits.flatten(), tau=1.0, hard=True
+            ).unflatten(dim=0, sizes=(1, 1, 3, 3))
+            for i in range(num_grids)
+        ],
+        dim=0,
+    )
+    if grids.is_cuda:
+        kernels = kernels.cuda()
 
-    padded_grid = periodic_padding(grid).float()
-    expanded_grid = t.unsqueeze(padded_grid, -1)
-    transposed_grid = t.permute(expanded_grid, (0, 3, 1, 2))
+    assert kernels.shape == (num_grids, 1, 3, 3)
 
-    return conv2d(transposed_grid, kernel, stride=1, padding="valid").squeeze()
+    padded_grids = periodic_padding(grids).float()
+    expanded_grids = t.unsqueeze(padded_grids, -1)
+    transposed_grids = t.permute(expanded_grids, (0, 3, 1, 2))
+
+    print(grids.shape)
+    print(transposed_grids.shape)
+    # move batch dim into channels
+    transposed_grids = transposed_grids.view(1, -1, height + 2, width + 2)
+    print(transposed_grids.shape)
+
+    return (
+        conv2d(
+            transposed_grids, kernels, stride=1, padding="valid", groups=num_grids
+        ).squeeze(),
+        kernels,
+    )
+
+
+# %%
+grids = t.zeros(100, 3, 3)
+grids[:, 1, 1] = 1
+grids_translated, kernels = translate_gumbel(grids, t.tensor(0.5))
+idx = 0
+print(grids[idx])
+print(grids_translated[idx])
+print(kernels[idx])
+
+
+# %%
 
 
 def excite_particles_STE(state: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
