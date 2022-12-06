@@ -35,7 +35,7 @@ def abc_prc(
     distance_func:  Calculates the distance between two sets of observations (given a set of inputs).
     epsilons:       A list of increasingly stricter distance thresholds.
     """
-    thetas = mu_1(1000)
+    thetas = mu_1(N)
     theta_hist = [thetas.detach().clone().numpy()]
     for _, epsilon in enumerate(tqdm(epsilons)):
         for i in range(N):
