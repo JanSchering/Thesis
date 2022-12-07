@@ -17,6 +17,38 @@ def model(grids: t.Tensor, beta: t.Tensor) -> t.Tensor:
     return grids + infection_update.detach().clone().numpy().astype(int)
 
 
+# ---------------------------------------------------------------
+
+
+class STEFunction(t.autograd.Function):
+    @staticmethod
+    def forward(ctx, input):
+        return (input > 0).float()
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return grad_output
+
+
+def model_STE(grids: t.Tensor, beta: t.Tensor) -> t.Tensor:
+    # produces a mask that is 1 for all healthy cells, 0 for the infected cells
+    healthy_mask = 1 - grids
+    # calculate the likelihood of spread
+    likelihoods = spread_likelihood(grids, beta)
+    # compare each likelihood to a random value ~ U(0,1) to get the residual values
+    if grids.is_cuda:
+        residuals = likelihoods - t.rand(*grids.shape).cuda()
+    else:
+        residuals = likelihoods - t.rand(*grids.shape)
+    # apply the heaviside to the residuals,
+    #   if the residual is positive, the cell should be infected ( < spread_likelihood)
+    #   if the residual is negative, the cell should stay healthy ( > spread_likelihood)
+    #   if the cell was already infected, no update should be applied
+    update_mask = STEFunction.apply(residuals) * healthy_mask
+    # apply the update to the current state
+    return grids + update_mask
+
+
 if __name__ == "__main__":
     size = 30
     batch_size = 2
