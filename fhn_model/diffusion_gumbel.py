@@ -59,11 +59,8 @@ def translate_gumbel(grids: t.Tensor, D: t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
     expanded_grids = t.unsqueeze(padded_grids, -1)
     transposed_grids = t.permute(expanded_grids, (0, 3, 1, 2))
 
-    print(grids.shape)
-    print(transposed_grids.shape)
     # move batch dim into channels
     transposed_grids = transposed_grids.view(1, -1, height + 2, width + 2)
-    print(transposed_grids.shape)
 
     return (
         conv2d(
@@ -74,47 +71,35 @@ def translate_gumbel(grids: t.Tensor, D: t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
 
 
 # %%
-grids = t.zeros(100, 3, 3)
-grids[:, 1, 1] = 1
-grids_translated, kernels = translate_gumbel(grids, t.tensor(0.5))
-idx = 0
-print(grids[idx])
-print(grids_translated[idx])
-print(kernels[idx])
 
 
-# %%
-
-
-def excite_particles_STE(state: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
+def excite_particles_STE(batch: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
     """
     Returns the adjusted Lattice + auxiliary grid of "excited" particles E.
     """
-    grid_dim = state.shape[-1]
-    Xi = (
-        uniform.Uniform(0, 1)
-        .sample_n(2 * (grid_dim**2))
-        .reshape(2, grid_dim, grid_dim)
-    )
-    if state.is_cuda:
+    batch_size, num_grids, height, width = batch.shape
+
+    Xi = uniform.Uniform(0, 1).sample_n((batch_size, num_grids, height, width))
+
+    if batch.is_cuda:
         Xi = Xi.cuda()
 
-    E = STEFunction.apply(state - N * Xi)
+    E = STEFunction.apply(batch - N * Xi)
     # if a cell is filled, E has to be 1 at that cell
-    E[state == N] += 1 - E[state == N]
+    E[batch == N] += 1 - E[batch == N]
     # if a cell is empty, E has to be 0 at that cell
-    E[state == 0] *= 0
+    E[batch == 0] *= 0
 
-    return state - E, E
+    return batch - E, E
 
 
-def accommodate_particles(grid: t.Tensor, E_A: t.Tensor, E_B: t.Tensor) -> t.Tensor:
+def accommodate_particles(batch: t.Tensor, E_A: t.Tensor, E_B: t.Tensor) -> t.Tensor:
     """
     Merges E into the current grid state.
     """
-    grid[0] += E_A
-    grid[1] += E_B
-    return grid
+    batch[:,0] += E_A
+    batch[:,1] += E_B
+    return batch
 
 
 def diffuse_STE(grid: t.Tensor, N: int, D_A, D_B) -> t.Tensor:
