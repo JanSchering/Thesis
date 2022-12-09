@@ -33,7 +33,7 @@ def abc_rej(
 
     Returns (t.Tensor, float):
         theta: A sample from the posterior p(theta|Y_obs).
-        num_stps: The amount of sampling steps necessary to produce the accepted sample.
+        num_steps: The amount of sampling steps necessary to produce the accepted sample.
     """
     # track the number of sampling steps necessary to produce a valid sample
     num_steps = 1
@@ -43,6 +43,8 @@ def abc_rej(
     while True:
         # Sample theta from the prior distribution over theta
         theta = prior()
+        if X.is_cuda:
+            theta = theta.cuda()
         # Use the sampled theta to generate a dataset
         Y_sim = model(X, theta)
         # Calculate the distance between the observed dataset and the one generated with theta
