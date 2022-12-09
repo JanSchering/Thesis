@@ -89,16 +89,16 @@ def rho(
     channels = t.randint_like(t.zeros(grid_size, grid_size), high=num_reaction_channels)
     if grid.is_cuda:
         channels = channels.cuda()
-    # iterate over each reaction channel 
+    # iterate over each reaction channel
     for channel_idx in range(num_reaction_channels):
         # get the reaction probability function of the current channel
         p_func = probability_funcs[channel_idx]
-        # get the rate coefficient of the current channel 
+        # get the rate coefficient of the current channel
         rate_coefficient = rate_coefficients[channel_idx]
         # mask out all cells that use a different reaction channel
         channel_mask = channels == channel_idx
         cells = grid[:, channel_mask].detach().clone()
-        # run the local reaction operator on each cell and update their state 
+        # run the local reaction operator on each cell and update their state
         grid[:, channel_mask] = sigma(
             cells, channel_idx, N, gamma, rate_coefficient, p_func
         )

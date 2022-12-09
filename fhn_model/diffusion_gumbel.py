@@ -79,7 +79,7 @@ def excite_particles_STE(batch: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
     """
     batch_size, num_grids, height, width = batch.shape
 
-    Xi = uniform.Uniform(0, 1).sample_n((batch_size, num_grids, height, width))
+    Xi = uniform.Uniform(0, 1).sample((batch_size, num_grids, height, width))
 
     if batch.is_cuda:
         Xi = Xi.cuda()
@@ -97,18 +97,18 @@ def accommodate_particles(batch: t.Tensor, E_A: t.Tensor, E_B: t.Tensor) -> t.Te
     """
     Merges E into the current grid state.
     """
-    batch[:,0] += E_A
-    batch[:,1] += E_B
+    batch[:, 0] += E_A
+    batch[:, 1] += E_B
     return batch
 
 
-def diffuse_STE(grid: t.Tensor, N: int, D_A, D_B) -> t.Tensor:
-    grid, E = excite_particles_STE(grid, N)
+def diffuse_STE(batch: t.Tensor, N: int, D_A, D_B) -> t.Tensor:
+    batch, E = excite_particles_STE(batch, N)
 
     # translate the excited particles of the A species
-    E_A = translate_gumbel(E[0], D_A)
+    E_A, _ = translate_gumbel(E[:, 0], D_A)
     # translate the excited particles of the B species
-    E_B = translate_gumbel(E[1], D_B)
+    E_B, _ = translate_gumbel(E[:, 1], D_B)
 
     # accommodate the translated particles at their new positions
-    return accommodate_particles(grid, E_A, E_B)
+    return accommodate_particles(batch, E_A, E_B)
