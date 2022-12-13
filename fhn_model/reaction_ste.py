@@ -1,10 +1,10 @@
-from typing import Callable
+from typing import Callable, List
 import torch as t
 from torch.distributions import uniform
 from ste_func import STEFunction
 
 
-def sigma(
+def sigma_STE(
     cells: t.Tensor,
     channel: int,
     N: int,
@@ -32,3 +32,36 @@ def sigma(
     elif channel == 5:
         cells[1] -= STEFunction.apply(reaction_probs - thresholds)
     return cells
+
+
+def rho_STE(
+    batch: t.Tensor,
+    N: int,
+    gamma: float,
+    rate_coefficients: List[float],
+    probability_funcs: List[Callable],
+    num_reaction_channels: int,
+):
+    batch_size, grids_per_el, height, width = batch.shape
+    # for each cell on the lattice, choose a reaction channel
+    channels = t.randint(high=num_reaction_channels, size=(batch_size, height, width))
+    if batch.is_cuda:
+        channels = channels.cuda()
+    # iterate over each reaction channel
+    for channel_idx in range(num_reaction_channels):
+        # get the reaction probability function of the current channel
+        p_func = probability_funcs[channel_idx]
+        # get the rate coefficient of the current channel
+        rate_coefficient = rate_coefficients[channel_idx]
+        # mask out all cells that use a different reaction channel
+        channel_mask = channels == channel_idx
+        # move the batch dimension in to match the masking
+        batch = batch.permute(1, 0, 2, 3)
+        cells = batch[:, channel_mask].detach().clone().float()
+        # run the local reaction operator on each cell and update their state
+        batch[:, channel_mask] = sigma_STE(
+            cells, channel_idx, N, gamma, rate_coefficient, p_func
+        )
+        # move the batch back to its original shape
+        batch = batch.permute(1, 0, 2, 3)
+    return batch

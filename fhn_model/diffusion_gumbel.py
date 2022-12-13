@@ -27,9 +27,16 @@ def translate_gumbel(grids: t.Tensor, D: t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
     # Calculate the log-probability of not moving
     p_center = t.log(1 - D)
 
+    if grids.is_cuda:
+        p_sides = p_sides.cuda()
+        p_diag = p_diag.cuda()
+        p_center = p_center.cuda()
+
     # build a log-probability matrix that will be used to sample a translation kernel
     # from the Gumbel-softmax
     kernel_logits = t.zeros((1, 1, 3, 3))
+    if grids.is_cuda:
+        kernel_logits = kernel_logits.cuda()
     kernel_logits[:, :, 0, 0] += p_diag
     kernel_logits[:, :, 0, 2] += p_diag
     kernel_logits[:, :, 2, 0] += p_diag
@@ -50,8 +57,6 @@ def translate_gumbel(grids: t.Tensor, D: t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
         ],
         dim=0,
     )
-    if grids.is_cuda:
-        kernels = kernels.cuda()
 
     assert kernels.shape == (num_grids, 1, 3, 3)
 
