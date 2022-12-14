@@ -50,17 +50,14 @@ def rho_STE(
         channels = channels.cuda()
     # iterate over each reaction channel
     for channel_idx in range(num_reaction_channels):
-        # get the reaction probability function of the current channel
-        p_func = probability_funcs[channel_idx]
-        # get the rate coefficient of the current channel
-        rate_coefficient = rate_coefficients[channel_idx]
         # mask out all cells that use a different reaction channel
         channel_mask = channels == channel_idx
         # move the batch dimension in to match the masking
         batch = batch.permute(1, 0, 2, 3)
         # calculate the reaction probability
-        reaction_probs = p_func(
-            batch[:, channel_mask], N, gamma, rate_coefficient)
+        reaction_probs = probability_funcs[channel_idx](
+            batch[:, channel_mask], N, gamma, rate_coefficients[channel_idx])
+        reaction_probs.retain_grad()
         # randomly sample a threshold value for each cell to compare the prob. against
         num_cells = batch[:, channel_mask].shape[-1]
         thresholds = uniform.Uniform(0, 1).sample_n(num_cells)
