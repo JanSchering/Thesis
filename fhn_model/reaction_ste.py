@@ -44,7 +44,8 @@ def rho_STE(
 ):
     batch_size, grids_per_el, height, width = batch.shape
     # for each cell on the lattice, choose a reaction channel
-    channels = t.randint(high=num_reaction_channels, size=(batch_size, height, width))
+    channels = t.randint(high=num_reaction_channels,
+                         size=(batch_size, height, width))
     if batch.is_cuda:
         channels = channels.cuda()
     # iterate over each reaction channel
@@ -57,11 +58,30 @@ def rho_STE(
         channel_mask = channels == channel_idx
         # move the batch dimension in to match the masking
         batch = batch.permute(1, 0, 2, 3)
-        cells = batch[:, channel_mask].detach().clone().float()
+        # calculate the reaction probability
+        reaction_probs = p_func(
+            batch[:, channel_mask], N, gamma, rate_coefficient)
+        # randomly sample a threshold value for each cell to compare the prob. against
+        num_cells = batch[:, channel_mask].shape[-1]
+        thresholds = uniform.Uniform(0, 1).sample_n(num_cells)
+        if batch.is_cuda:
+            thresholds = thresholds.cuda()
         # run the local reaction operator on each cell and update their state
-        batch[:, channel_mask] = sigma_STE(
-            cells, channel_idx, N, gamma, rate_coefficient, p_func
-        )
+        if channel_idx == 0 or channel_idx == 2:
+            batch[:,
+                  channel_mask][0] += STEFunction.apply(reaction_probs - thresholds)
+        # for channel 1 and 3, the number of particles for species A should decrease according to the prob.
+        elif channel_idx == 1 or channel_idx == 3:
+            batch[:,
+                  channel_mask][0] -= STEFunction.apply(reaction_probs - thresholds)
+        # for channel 4, the number of particles for species B should increase according to the prob.
+        elif channel_idx == 4:
+            batch[:,
+                  channel_mask][1] += STEFunction.apply(reaction_probs - thresholds)
+        # for channel 5, the number of particles for species B should decrease according to the prob.
+        elif channel_idx == 5:
+            batch[:,
+                  channel_mask][1] -= STEFunction.apply(reaction_probs - thresholds)
         # move the batch back to its original shape
         batch = batch.permute(1, 0, 2, 3)
     return batch
