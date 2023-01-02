@@ -1,6 +1,7 @@
 import torch as t
 from torch.distributions import uniform
 from diffusion import diffuse
+from reaction import rho, p1, p2, p3, p4, p5, p6
 from diffusion_gumbel import diffuse_STE
 import numpy as np
 from tqdm import tqdm
@@ -39,7 +40,7 @@ def generate_sequence(
     use_diffusion=True,
     DA=None,
     DB=None,
-    react=False,
+    use_reaction=False,
     gamma=None,
     k1=None,
     k1_bar=None,
@@ -47,7 +48,6 @@ def generate_sequence(
     k2_bar=None,
     k3=None,
     k3_bar=None,
-    num_reaction_channels=None,
 ):
     grid = grid.float()
     sequence = t.zeros((num_steps, *grid.shape))
@@ -56,6 +56,17 @@ def generate_sequence(
         sequence[i] = grid.detach().clone()
         if use_diffusion:
             grid = diffuse(grid, N, DA, DB)
+        if use_reaction:
+            rate_coefficients = t.tensor([k1, k1_bar, k2, k2_bar, k3, k3_bar])
+            probability_funcs = [p1, p2, p3, p4, p5, p6]
+            grid = rho(
+                grid,
+                N,
+                gamma,
+                rate_coefficients,
+                probability_funcs,
+                num_reaction_channels=6,
+            )
 
     return sequence
 
