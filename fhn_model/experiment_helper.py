@@ -83,3 +83,9 @@ def dim_specific_MSE(X, Y, dim: int):
 
 def dim_specific_dist(X, D1, D2, dim: int):
     return (dim_specific_MSE(X, D1, dim) - dim_specific_MSE(X, D2, dim)) ** 2
+
+
+def distV2(X, D1, D2):
+    species_A_dist = dim_specific_dist(X, D1, D2, dim=0)
+    species_B_dist = dim_specific_dist(X, D1, D2, dim=1)
+    return species_A_dist + species_B_dist
