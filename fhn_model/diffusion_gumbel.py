@@ -18,25 +18,22 @@ def translate_gumbel(grids: t.Tensor, D: t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
     Returns:
         (Tuple[t.Tensor, t.Tensor]): The translated grids + the kernels used for each translation
     """
+    # set torch device
+    device = t.device("cuda" if t.cuda.is_available() else "cpu")
+    # define a probability factor for convenience
+    p_factor = t.sqrt(t.tensor(2.0, device=device))
     # Get the number of grids in the batch
     num_grids, height, width = grids.shape
     # Calculate the log-probability of moving horizontally or vertically
-    p_sides = t.log(D * (t.sqrt(t.tensor(2.0)) - 1) * t.sqrt(t.tensor(2.0)) / 4)
+    p_sides = t.log(D * (p_factor - 1) * p_factor / 4)
     # Calculate the log-probability of moving along the diagonal
-    p_diag = t.log(D * (t.sqrt(t.tensor(2.0)) - 1) / 4)
+    p_diag = t.log(D * (p_factor - 1) / 4)
     # Calculate the log-probability of not moving
     p_center = t.log(1 - D)
 
-    if grids.is_cuda:
-        p_sides = p_sides.cuda()
-        p_diag = p_diag.cuda()
-        p_center = p_center.cuda()
-
     # build a log-probability matrix that will be used to sample a translation kernel
     # from the Gumbel-softmax
-    kernel_logits = t.zeros((1, 1, 3, 3))
-    if grids.is_cuda:
-        kernel_logits = kernel_logits.cuda()
+    kernel_logits = t.zeros((1, 1, 3, 3), device=device)
     kernel_logits[:, :, 0, 0] += p_diag
     kernel_logits[:, :, 0, 2] += p_diag
     kernel_logits[:, :, 2, 0] += p_diag
@@ -82,12 +79,12 @@ def excite_particles_STE(batch: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
     """
     Returns the adjusted Lattice + auxiliary grid of "excited" particles E.
     """
+    # set torch device
+    device = t.device("cuda" if t.cuda.is_available() else "cpu")
+
     batch_size, num_grids, height, width = batch.shape
 
-    Xi = uniform.Uniform(0, 1).sample((batch_size, num_grids, height, width))
-
-    if batch.is_cuda:
-        Xi = Xi.cuda()
+    Xi = uniform.Uniform(0, 1).sample((batch_size, num_grids, height, width)).to(device)
 
     E = STEFunction.apply(batch - N * Xi)
     # if a cell is filled, E has to be 1 at that cell
