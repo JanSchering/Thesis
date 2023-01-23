@@ -70,7 +70,7 @@ def generate_sequence(
         t.save(grid, path.join(data_path, "batch_0", "0.pt"))
         batch_counter = 0
     if create_seq:
-        sequence = t.zeros((num_steps + 1, *grid.shape))
+        sequence = t.zeros((num_steps, *grid.shape))
         sequence[0] = grid.detach().clone()
 
     for i in tqdm(range(num_steps)):
@@ -133,18 +133,6 @@ def generate_sequence(
 # -----------------------------
 
 
-def MSE(X, Y):
-    return t.mean(t.sum((X - Y) ** 2, dim=((1, 2, 3))))
-
-
-def dist(X, D1, D2):
-    mse_D1 = MSE(X, D1)
-    # print(mse_D1)
-    mse_D2 = MSE(X, D2)
-    # print(mse_D2)
-    return (mse_D1 - mse_D2) ** 2
-
-
 def dim_specific_MSE(X, Y, dim: int):
     return t.mean(t.sum((X[:, dim] - Y[:, dim]) ** 2, dim=((1, 2))))
 
@@ -153,7 +141,7 @@ def dim_specific_dist(X, D1, D2, dim: int):
     return (dim_specific_MSE(X, D1, dim) - dim_specific_MSE(X, D2, dim)) ** 2
 
 
-def distV2(X, D1, D2):
+def dataset_dist(X, D1, D2):
     species_A_dist = dim_specific_dist(X, D1, D2, dim=0)
     species_B_dist = dim_specific_dist(X, D1, D2, dim=1)
     return species_A_dist + species_B_dist
