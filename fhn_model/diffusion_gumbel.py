@@ -72,20 +72,24 @@ def translate_gumbel(grids: t.Tensor, D: t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
     )
 
 
-# %%
-
-
 def excite_particles_STE(batch: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
-    """
-    Returns the adjusted Lattice + auxiliary grid of "excited" particles E.
+    """Returns the adjusted Lattice + auxiliary grid of "excited" particles E.
+
+    Args:
+        batch The lattices, shape (batch_size, 2, lattice_size, lattice_size)
+        N (int): The maximum occupation number per lattice cell
+
+    Returns:
+        Tuple[t.Tensor, t.Tensor]: [Grid after excitement step, Excited Lattice E]
     """
     # set torch device
     device = t.device("cuda" if t.cuda.is_available() else "cpu")
-
+    # get the dimensionality of the batch
     batch_size, num_grids, height, width = batch.shape
-
+    # sample a random number for each lattice cell in the batch,
+    # used to determine whether a particle of a given cell becomes excited
     Xi = uniform.Uniform(0, 1).sample((batch_size, num_grids, height, width)).to(device)
-
+    # Apply heaviside to get the grid of excited particles E
     E = STEFunction.apply(batch - N * Xi)
     # if a cell is filled, E has to be 1 at that cell
     E[batch == N] += 1 - E[batch == N]
@@ -96,15 +100,34 @@ def excite_particles_STE(batch: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
 
 
 def accommodate_particles(batch: t.Tensor, E_A: t.Tensor, E_B: t.Tensor) -> t.Tensor:
-    """
-    Merges E into the current grid state.
+    """Merges the batch of excited lattices E back into the current grid state.
+
+    Args:
+        batch (t.Tensor): The lattices, shape (batch_size, 2, lattice_size, lattice_size)
+        E_A (t.Tensor): The excited lattices for the A species
+        E_B (t.Tensor): The excited lattices for the B species
+
+    Returns:
+        t.Tensor: _description_
     """
     batch[:, 0] += E_A
     batch[:, 1] += E_B
     return batch
 
 
-def diffuse_STE(batch: t.Tensor, N: int, D_A, D_B) -> t.Tensor:
+def diffuse_STE(batch: t.Tensor, N: int, D_A: t.Tensor, D_B: t.Tensor) -> t.Tensor:
+    """Perform a step of diffusion for a batch of FHN lattices
+
+    Args:
+        batch (t.Tensor): The lattices, shape (batch_size, 2, lattice_size, lattice_size)
+        N (int): The maximum occupation number per lattice cell
+        D_A (t.Tensor): The diffusion coefficient of the A species
+        D_B (t.Tensor): The diffusion coefficient of the B species
+
+    Returns:
+        t.Tensor: The batch after the diffusion step
+    """
+    # perform a step of particle excitation
     batch, E = excite_particles_STE(batch, N)
 
     # translate the excited particles of the A species

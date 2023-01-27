@@ -18,6 +18,18 @@ class Direction2D(Enum):
 
 
 def translate(grid: t.Tensor, v: Direction2D) -> t.Tensor:
+    """Translate the cell contents of a lattice <grid> in the given direction <v>.
+
+    Args:
+        grid (t.Tensor): The grid to perform the translation on
+        v (Direction2D): The direction to translate in
+
+    Raises:
+        Exception: Invalid direction provided
+
+    Returns:
+        t.Tensor: the translated grid
+    """
     translate_north = translate_west = [*t.arange(1, grid.shape[1]), 0]
     translate_south = translate_east = [-1, *t.arange(grid.shape[1] - 1)]
 
@@ -44,8 +56,14 @@ def translate(grid: t.Tensor, v: Direction2D) -> t.Tensor:
 
 
 def excite_particles(state: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
-    """
-    Returns the adjusted Lattice + auxiliary grid of "excited" particles E.
+    """Returns the adjusted Lattice + auxiliary grid of "excited" particles E.
+
+    Args:
+        state (t.Tensor): The FHN lattice, shape (2, lattice_size, lattice_size)
+        N (int): The maximum occupation number per cell
+
+    Returns:
+        Tuple[t.Tensor, t.Tensor]: adjusted Lattice + auxiliary grid of "excited" particles E
     """
     grid_dim = state.shape[-1]
     Xi = (
@@ -64,13 +82,31 @@ def excite_particles(state: t.Tensor, N: int) -> Tuple[t.Tensor, t.Tensor]:
 
 
 def accomodate_particles(grid: t.Tensor, E: t.Tensor) -> t.Tensor:
-    """
-    Merges E into the current grid state.
+    """Merges E into the current grid state.
+
+    Args:
+        grid (t.Tensor): the FHN lattice, shape (2, lattice_size, lattice_size)
+        E (t.Tensor): The lattice ofd excited particles
+
+    Returns:
+        t.Tensor: the merged lattice
     """
     return grid + E
 
 
 def diffuse(state: t.Tensor, N: int, D_A, D_B) -> t.Tensor:
+    """Perform a step of diffusion on a FHN lattice
+
+    Args:
+        state (t.Tensor): The current FHN lattice, shape (2, lattice_size, lattice_size)
+        N (int): The maximum occupation number per lattice cell
+        D_A (_type_): Diffusion coefficient for the A species
+        D_B (_type_): Diffusion coefficient for the B species
+
+    Returns:
+        t.Tensor: The FHN lattice after the diffusion
+    """
+    # perform a step of cell excitation to get the grid of excited particles E
     state, E = excite_particles(state, N)
     # translate the excited A species
     p_A = [
