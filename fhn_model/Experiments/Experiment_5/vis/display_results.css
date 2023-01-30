@@ -1,0 +1,45 @@
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 1920px;
+}
+
+.subContainer {
+    margin-left: 10px;
+    border: 2px solid black;
+    margin-top: 10px;
+}
+
+.vis {
+    height: 150px
+}
+
+.label {
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    font-family: sans-serif;
+}
+
+.playButton {
+    width: 301.2px;
+    height: 100%;
+    font-size: 2em;
+    font-weight: bold;
+    font-family: sans-serif;
+    background-color: aquamarine;
+}
+
+.stepCounter {
+    width: 301.2px;
+    height: 100%;
+    font-size: 2em;
+    font-weight: bold;
+    font-family: sans-serif;
+    display: table;
+    overflow: hidden;
+}
+
+.stepCounterInner {
+    margin: 0;
+}
