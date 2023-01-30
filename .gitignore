@@ -3,3 +3,5 @@
 /*/**/*.pt
 /*/**/*.png
 /*/**/*.gif
+!/fhn_model/Experiments/Experiment_5/gif/*.gif
+!/fhn_model/Experiments/Experiment_5/im/**/49900.png
