@@ -80,6 +80,19 @@ function updateImages() {
     }
 }
 
+var refImage = document.createElement("img")
+refImage.src = "./ref_state.png"
+refImage.classList.add("vis")
+var refImageLabel = document.createElement("p")
+refImageLabel.innerHTML = "Stable state used for training"
+refImageLabel.classList.add("label")
+var refImageContainer = document.createElement("div")
+refImageContainer.classList.add("subContainer")
+refImageContainer.appendChild(refImageLabel)
+refImageContainer.appendChild(refImage)
+refImageContainer.style.width = "301.2px"
+anchorEl.appendChild(refImageContainer)
+
 var startButton = document.createElement("button")
 startButton.innerHTML = "start"
 startButton.addEventListener("click", () => {
