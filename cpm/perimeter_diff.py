@@ -1,4 +1,3 @@
-# %%
 import torch as t
 import functorch as funcT
 import sys
@@ -42,7 +41,6 @@ def sum_contacts(grid: t.Tensor, target: t.Tensor) -> t.Tensor:
     Returns:
         t.Tensor: Number of foreign contact points with <target>.
     """
-    print(target, grid.shape)
     return t.sum(matrix_contacts(grid, target))
 
 
@@ -51,12 +49,25 @@ perimeter = funcT.vmap(sum_contacts, in_dims=(0, None))
 # Vectorizes the process for multiple target values
 id_batched_perimeter = funcT.vmap(perimeter, in_dims=(None, 0))
 
-# %%
+
 def H_perimeter(batch: t.Tensor, target_perimeter: t.Tensor):
+    """Calculate the Hamiltonian perimeter energy for each CPM in <batch>.
+
+    Args:
+        batch (t.Tensor): Batch of CPM grids
+        target_perimeter (t.Tensor): The desired perimeter of the cells. Can either be a single value of
+        shape (1,) or specify a target perimeter for each cell with shape (N_cells,)
+
+    Returns:
+        t.Tensor: the Hamiltonian perimeter energy for each CPM, shape (batch_size,)
+    """
     # ensure that the batch is using float
     batch = batch.float()
     # get the IDs of the cells on the grid
     cell_IDs = t.unique(batch)
+    # check the shape of the input and adjust if necessary
+    if target_perimeter.size()[0] == 1:
+        target_perimeter = target_perimeter.repeat(cell_IDs.shape[0] - 1)
     # define an unfolding operator
     unfold_transform = t.nn.Unfold(kernel_size=3)
     # provide a periodic torus padding to the grid
@@ -70,30 +81,7 @@ def H_perimeter(batch: t.Tensor, target_perimeter: t.Tensor):
     # apply the ID batched perimeter function to find the perimeter for each cell ID
     # NOTE: this includes the perimeter for the Background (ID = 0) which should be ignored in the
     # proceeding calculations as it shouldn't influence the Hamiltonian
-    cell_perimeters = id_batched_perimeter(batch_reshaped, cell_IDs)
+    cell_perimeters = id_batched_perimeter(batch_reshaped, cell_IDs).T[:, 1:]
 
-    return cell_perimeters
-
-
-# %%
-grid = t.zeros((1, 6, 6))
-grid[0, 2, 3] = 1
-grid[0, 3, 2] = 1
-grid[0, 3, 3] = 1
-
-H_perimeter(grid, None)
-# %%
-grid = t.zeros((1, 5, 5))
-grid[0, 1, 1] = 2
-grid[0, 1, 2] = 1
-grid[0, 1, 3] = 1
-grid[0, 2, 0] = 2
-grid[0, 2, 1] = 1
-grid[0, 2, 2] = 1
-grid[0, 2, 3] = 1
-grid[0, 3, 1] = 2
-grid[0, 3, 2] = 1
-grid[0, 3, 3] = 1
-
-H_perimeter(grid, None)
-# %%
+    # take the square difference between current perimeter and target for every cell and sum up the result
+    return t.sum((cell_perimeters - target_perimeter) ** 2, dim=1)
