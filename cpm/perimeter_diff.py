@@ -65,9 +65,6 @@ def H_perimeter(batch: t.Tensor, target_perimeter: t.Tensor):
     batch = batch.float()
     # get the IDs of the cells on the grid
     cell_IDs = t.unique(batch)
-    # check the shape of the input and adjust if necessary
-    if target_perimeter.size()[0] == 1:
-        target_perimeter = target_perimeter.repeat(cell_IDs.shape[0] - 1)
     # define an unfolding operator
     unfold_transform = t.nn.Unfold(kernel_size=3)
     # provide a periodic torus padding to the grid

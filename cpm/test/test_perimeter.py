@@ -79,3 +79,7 @@ def test_H_perimeter_diff_2():
     h_perims = H_perimeter(grid, t.tensor((2.0, 5.0)))
 
     assert t.all(t.isclose(h_perims, t.tensor((901.0, 29.0))))
+
+    h_perims = H_perimeter(grid, t.tensor((2.0,)))
+
+    assert t.all(t.isclose(h_perims, t.tensor((1000.0, 8.0))))
