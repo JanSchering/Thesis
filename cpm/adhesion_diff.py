@@ -90,7 +90,8 @@ def calc_adh_energy(
     # I.e. when calculating the adhesion energy, we will calculate it for both (1, 3) and (3, 1).
     # This holds true for all cell_cell contacts. Needs to be revised if we have to apply a different
     # penalty depending on (source, target) combination.
-    cell_cell_penalty /= 2
+    if cell_cell_penalty:
+        cell_cell_penalty /= 2
     if target_contacts.size()[0] == 1:
         penalties = cell_bg_penalty
     elif cell_cell_penalty.size()[0] >= 1 and target_contacts.size()[0] > 1:
@@ -127,7 +128,8 @@ def adhesion_energy(
     """
     # ensure correct data type of the tensors
     batch = batch.float()
-    cell_cell_penalty = cell_cell_penalty.float()
+    if cell_cell_penalty:
+        cell_cell_penalty = cell_cell_penalty.float()
     # define an unfolding operator
     unfold_transform = t.nn.Unfold(kernel_size=3)
     # provide a periodic torus padding to the grid
