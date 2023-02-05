@@ -1,4 +1,3 @@
-# %%
 import torch as t
 import functorch as funcT
 import sys
@@ -160,20 +159,3 @@ def adhesion_energy(
         ),
         dim=0,
     )
-
-
-# %%
-grid = t.zeros((2, 5, 5))
-grid[0, 1, 1] = 2
-grid[0, 1, 2] = 1
-grid[0, 1, 3] = 1
-grid[0, 2, 0] = 2
-grid[0, 2, 1] = 1
-grid[0, 2, 2] = 1
-grid[0, 2, 3] = 1
-grid[0, 3, 1] = 2
-grid[0, 3, 2] = 1
-grid[0, 3, 3] = 1
-
-adhesion_energy(grid, t.tensor((34.0,)), t.tensor((56,)))
-# %%
