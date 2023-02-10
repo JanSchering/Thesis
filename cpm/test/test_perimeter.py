@@ -1,9 +1,10 @@
+from cell_typing import CellKind, CellMap
+from perimeter_diff import H_perimeter
+from perimeter import perimeter
+import torch as t
 import sys
 
 sys.path.insert(0, "../")
-import torch as t
-from perimeter import perimeter
-from perimeter_diff import H_perimeter
 
 
 def init_test_1():
@@ -31,9 +32,16 @@ def test_perimeter_1():
 def test_H_perimeter_diff_1():
     batch = init_test_1()
 
+    test_cellkind = CellKind(
+        target_perimeter=t.tensor(16.0), target_volume=None)
+
+    test_cellmap = CellMap()
+    test_cellmap.add(1, test_cellkind)
+
     h_perim = H_perimeter(
         batch,
-        target_perimeter=t.tensor((16.0,)),
+        cell_map=test_cellmap,
+        target_perimeter=None
     )
 
     assert t.isclose(h_perim, t.tensor(4.0))
@@ -76,10 +84,15 @@ def test_H_perimeter_diff_2():
     grid[0, 3, 2] = 1
     grid[0, 3, 3] = 1
 
-    h_perims = H_perimeter(grid, t.tensor((2.0, 5.0)))
+    test_cellkind1 = CellKind(
+        target_perimeter=t.tensor(2.0), target_volume=None)
+    test_cellkind2 = CellKind(
+        target_perimeter=t.tensor(5.0), target_volume=None)
+
+    test_cellmap = CellMap()
+    test_cellmap.add(cell_id=1, cell_type=test_cellkind1)
+    test_cellmap.add(cell_id=2, cell_type=test_cellkind2)
+
+    h_perims = H_perimeter(grid, cell_map=test_cellmap, target_perimeter=None)
 
     assert t.all(t.isclose(h_perims, t.tensor((901.0, 29.0))))
-
-    h_perims = H_perimeter(grid, t.tensor((2.0,)))
-
-    assert t.all(t.isclose(h_perims, t.tensor((1000.0, 8.0))))

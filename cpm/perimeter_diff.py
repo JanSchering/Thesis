@@ -1,9 +1,10 @@
+from periodic_padding import periodic_padding
 import torch as t
 import functorch as funcT
 import sys
+from operator import itemgetter
 
 sys.path.insert(0, "../si_model")
-from periodic_padding import periodic_padding
 
 
 def row_contacts(row: t.Tensor, target: t.Tensor) -> t.Tensor:
@@ -50,7 +51,7 @@ perimeter = funcT.vmap(sum_contacts, in_dims=(0, None))
 id_batched_perimeter = funcT.vmap(perimeter, in_dims=(None, 0))
 
 
-def H_perimeter(batch: t.Tensor, target_perimeter: t.Tensor):
+def H_perimeter(batch: t.Tensor, cell_map, target_perimeter: t.Tensor):
     """Calculate the Hamiltonian perimeter energy for each CPM in <batch>.
 
     Args:
@@ -64,7 +65,7 @@ def H_perimeter(batch: t.Tensor, target_perimeter: t.Tensor):
     # ensure that the batch is using float
     batch = batch.float()
     # get the IDs of the cells on the grid
-    cell_IDs = t.unique(batch)
+    cell_IDs = t.unique(batch)[1:]
     # define an unfolding operator
     unfold_transform = t.nn.Unfold(kernel_size=3)
     # provide a periodic torus padding to the grid
@@ -78,7 +79,16 @@ def H_perimeter(batch: t.Tensor, target_perimeter: t.Tensor):
     # apply the ID batched perimeter function to find the perimeter for each cell ID
     # NOTE: this includes the perimeter for the Background (ID = 0) which should be ignored in the
     # proceeding calculations as it shouldn't influence the Hamiltonian
-    cell_perimeters = id_batched_perimeter(batch_reshaped, cell_IDs).T[:, 1:]
+    cell_perimeters = id_batched_perimeter(batch_reshaped, cell_IDs).T
+
+    print(cell_IDs.size())
+    if cell_IDs.size()[0] == 1:
+        target_perimeters = cell_map.get_map(
+        )[cell_IDs[0].int().item()].target_perimeter
+    else:
+        print(itemgetter(*cell_IDs.int().tolist())(cell_map.get_map()))
+        target_perimeters = t.tensor([cell_params.target_perimeter for cell_params in
+                                      itemgetter(*cell_IDs.int().tolist())(cell_map.get_map())])
 
     # take the square difference between current perimeter and target for every cell and sum up the result
-    return t.sum((cell_perimeters - target_perimeter) ** 2, dim=1)
+    return t.sum((cell_perimeters - target_perimeters) ** 2, dim=1)
