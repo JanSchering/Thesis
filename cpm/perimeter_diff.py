@@ -3,6 +3,7 @@ import torch as t
 import functorch as funcT
 import sys
 from operator import itemgetter
+from cell_typing import CellMap
 
 sys.path.insert(0, "../si_model")
 
@@ -51,7 +52,7 @@ perimeter = funcT.vmap(sum_contacts, in_dims=(0, None))
 id_batched_perimeter = funcT.vmap(perimeter, in_dims=(None, 0))
 
 
-def H_perimeter(batch: t.Tensor, cell_map, target_perimeter: t.Tensor):
+def perimeter_energy(batch: t.Tensor, cell_map: CellMap):
     """Calculate the Hamiltonian perimeter energy for each CPM in <batch>.
 
     Args:
@@ -83,12 +84,18 @@ def H_perimeter(batch: t.Tensor, cell_map, target_perimeter: t.Tensor):
 
     print(cell_IDs.size())
     if cell_IDs.size()[0] == 1:
-        target_perimeters = cell_map.get_map(
-        )[cell_IDs[0].int().item()].target_perimeter
+        target_perimeters = cell_map.get_map()[
+            cell_IDs[0].int().item()
+        ].target_perimeter
     else:
-        print(itemgetter(*cell_IDs.int().tolist())(cell_map.get_map()))
-        target_perimeters = t.tensor([cell_params.target_perimeter for cell_params in
-                                      itemgetter(*cell_IDs.int().tolist())(cell_map.get_map())])
+        target_perimeters = t.tensor(
+            [
+                cell_params.target_perimeter
+                for cell_params in itemgetter(*cell_IDs.int().tolist())(
+                    cell_map.get_map()
+                )
+            ]
+        )
 
     # take the square difference between current perimeter and target for every cell and sum up the result
     return t.sum((cell_perimeters - target_perimeters) ** 2, dim=1)

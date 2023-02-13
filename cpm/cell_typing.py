@@ -8,9 +8,10 @@ class CellKind:
     a cell of a given type.
     """
 
-    def __init__(self, target_perimeter, target_volume):
+    def __init__(self, target_perimeter, target_volume, lambda_volume):
         self.target_perimeter = target_perimeter
         self.target_volume = target_volume
+        self.lambda_volume = lambda_volume
 
 
 class CellMap:
