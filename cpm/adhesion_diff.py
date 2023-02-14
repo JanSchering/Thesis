@@ -105,7 +105,23 @@ centroid_batched_adh_energy = funcT.vmap(calc_adh_energy, in_dims=(None, 0, 0, 0
 
 def get_penalties(cell_id, cell_contacts, cell_map):
     cell_type = cell_map.get_item(cell_id.int().item())
-    penalties = itemgetter(*cell_contacts.int().tolist())(cell_type.adhesion_cost)
+    # only cell-bg
+    if t.numel(cell_contacts) == 1:
+        penalties = cell_type.adhesion_cost[0]
+    # cell-bg and 1 other, need to seperate the case because of itemgetter
+    elif t.numel(cell_contacts) == 2:
+        contact_type = cell_map.get_item(cell_contacts[1].int().item()).type_id
+        penalties = (cell_type.adhesion_cost[0], cell_type.adhesion_cost[contact_type])
+    # more than two combinations
+    else:
+        contact_types = [
+            cellkind.type_id
+            for cellkind in itemgetter(*cell_contacts[1:].int().tolist())(
+                cell_map.get_map()
+            )
+        ]
+        penalties = itemgetter(0, *contact_types)(cell_type.adhesion_cost)
+
     return penalties
 
 
@@ -160,69 +176,3 @@ def adhesion_energy(
         ),
         dim=0,
     )
-
-
-# %%
-grid = t.zeros((2, 5, 5))
-grid[0, 1, 1] = 2
-grid[0, 1, 2] = 1
-grid[0, 1, 3] = 1
-grid[0, 2, 0] = 2
-grid[0, 2, 1] = 1
-grid[0, 2, 2] = 1
-grid[0, 2, 3] = 1
-grid[0, 3, 1] = 2
-grid[0, 3, 2] = 1
-grid[0, 3, 3] = 1
-
-cell1_adhesion = {0: 34.0, 1: 56.0, 2: 56.0}
-cell1 = CellKind(
-    type_id=1,
-    target_perimeter=None,
-    target_volume=None,
-    lambda_volume=None,
-    adhesion_cost=cell1_adhesion,
-)
-
-cell2_adhesion = {0: 34.0, 1: 56.0, 2: 56.0}
-cell2 = CellKind(
-    type_id=2,
-    target_perimeter=None,
-    target_volume=None,
-    lambda_volume=None,
-    adhesion_cost=cell2_adhesion,
-)
-cell_map = CellMap()
-cell_map.add(cell_id=1, cell_type=cell2)
-cell_map.add(cell_id=2, cell_type=cell2)
-
-adhesive_energy = adhesion_energy(grid, cell_map)
-print(adhesive_energy)
-# %%
-"""
-[   [0, 0, 0, 0, 0]
-    [0, 0, 1, 0, 0]
-    [0, 1, 1, 1, 0]
-    [0, 0, 1, 0, 0]
-    [0, 0, 0, 0, 0]   ]
-"""
-grid = t.zeros((1, 5, 5))
-grid[0, 2, 1] = 1
-grid[0, 2, 2] = 1
-grid[0, 2, 3] = 1
-grid[0, 1, 2] = 1
-grid[0, 3, 2] = 1
-
-cell1_adhesion = {0: t.tensor(25.0)}
-cell1 = CellKind(
-    type_id=1,
-    target_perimeter=None,
-    target_volume=None,
-    lambda_volume=None,
-    adhesion_cost=cell1_adhesion,
-)
-cell_map = CellMap()
-cell_map.add(cell_id=1, cell_type=cell1)
-
-adhesion_energy(grid, cell_map)
-# %%

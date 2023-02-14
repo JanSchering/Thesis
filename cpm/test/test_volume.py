@@ -24,13 +24,25 @@ def test_volume_energy_1():
     batch[1, :, :] = 3
 
     cell1 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(4.0), lambda_volume=t.tensor(1.0)
+        type_id=1,
+        target_perimeter=None,
+        target_volume=t.tensor(4.0),
+        lambda_volume=t.tensor(1.0),
+        adhesion_cost=None,
     )
     cell2 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(2.0), lambda_volume=t.tensor(2.0)
+        type_id=1,
+        target_perimeter=None,
+        target_volume=t.tensor(2.0),
+        lambda_volume=t.tensor(2.0),
+        adhesion_cost=None,
     )
     cell3 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(1.0), lambda_volume=t.tensor(3.0)
+        type_id=1,
+        target_perimeter=None,
+        target_volume=t.tensor(1.0),
+        lambda_volume=t.tensor(3.0),
+        adhesion_cost=None,
     )
     cell_map = CellMap()
     cell_map.add(cell_id=1, cell_type=cell1)
@@ -53,7 +65,11 @@ def test_volume_energy_2():
     batch[0, 6, 5] = 1
 
     cell1 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(9.0), lambda_volume=t.tensor(0.6)
+        type_id=1,
+        target_perimeter=None,
+        target_volume=t.tensor(9.0),
+        lambda_volume=t.tensor(0.6),
+        adhesion_cost=None,
     )
     cell_map = CellMap()
     cell_map.add(cell_id=1, cell_type=cell1)
@@ -83,16 +99,32 @@ def test_volume_energy_3():
 
     lambda_volume = t.tensor(0.3)
     cell1 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(9.0), lambda_volume=lambda_volume
+        type_id=1,
+        target_perimeter=None,
+        target_volume=t.tensor(9.0),
+        lambda_volume=lambda_volume,
+        adhesion_cost=None,
     )
     cell2 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(5.0), lambda_volume=lambda_volume
+        type_id=2,
+        target_perimeter=None,
+        target_volume=t.tensor(5.0),
+        lambda_volume=lambda_volume,
+        adhesion_cost=None,
     )
     cell3 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(7.0), lambda_volume=lambda_volume
+        type_id=3,
+        target_perimeter=None,
+        target_volume=t.tensor(7.0),
+        lambda_volume=lambda_volume,
+        adhesion_cost=None,
     )
     cell4 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(2.0), lambda_volume=lambda_volume
+        type_id=4,
+        target_perimeter=None,
+        target_volume=t.tensor(2.0),
+        lambda_volume=lambda_volume,
+        adhesion_cost=None,
     )
 
     cell_map = CellMap()
@@ -121,13 +153,25 @@ def test_volume_energy_3():
 
     lambda_volume = t.tensor(0.6)
     cell1 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(6.0), lambda_volume=lambda_volume
+        type_id=1,
+        target_perimeter=None,
+        target_volume=t.tensor(6.0),
+        lambda_volume=lambda_volume,
+        adhesion_cost=None,
     )
     cell2 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(6.0), lambda_volume=lambda_volume
+        type_id=2,
+        target_perimeter=None,
+        target_volume=t.tensor(6.0),
+        lambda_volume=lambda_volume,
+        adhesion_cost=None,
     )
     cell3 = CellKind(
-        target_perimeter=None, target_volume=t.tensor(6.0), lambda_volume=lambda_volume
+        type_id=3,
+        target_perimeter=None,
+        target_volume=t.tensor(6.0),
+        lambda_volume=lambda_volume,
+        adhesion_cost=None,
     )
 
     cell_map = CellMap()

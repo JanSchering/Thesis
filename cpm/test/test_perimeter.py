@@ -33,7 +33,11 @@ def test_perimeter_energy_1():
     batch = init_test_1()
 
     test_cellkind = CellKind(
-        target_perimeter=t.tensor(16.0), target_volume=None, lambda_volume=None
+        type_id=1,
+        target_perimeter=t.tensor(16.0),
+        target_volume=None,
+        lambda_volume=None,
+        adhesion_cost=None,
     )
 
     test_cellmap = CellMap()
@@ -82,10 +86,18 @@ def test_perimeter_energy_2():
     grid[0, 3, 3] = 1
 
     test_cellkind1 = CellKind(
-        target_perimeter=t.tensor(2.0), target_volume=None, lambda_volume=None
+        type_id=1,
+        target_perimeter=t.tensor(2.0),
+        target_volume=None,
+        lambda_volume=None,
+        adhesion_cost=None,
     )
     test_cellkind2 = CellKind(
-        target_perimeter=t.tensor(5.0), target_volume=None, lambda_volume=None
+        type_id=2,
+        target_perimeter=t.tensor(5.0),
+        target_volume=None,
+        lambda_volume=None,
+        adhesion_cost=None,
     )
 
     test_cellmap = CellMap()
