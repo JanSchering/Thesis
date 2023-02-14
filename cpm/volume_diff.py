@@ -6,9 +6,19 @@ import functorch as funcT
 
 
 def volume(cell_id: t.Tensor, batch: t.Tensor):
+    """Find the number of pixels with value <cell_id> for each grid in <batch>.
+
+    Args:
+        cell_id (t.Tensor): The pixel-value/identity to count
+        batch (t.Tensor): The grids to count on
+
+    Returns:
+        t.Tensor: the number of <cell_id> pixels for each grid in <batch>
+    """
     return t.sum(0 ** ((batch - cell_id) ** 2), dim=(1, 2))
 
 
+# Vectorizes the volume function for a batch of different cell_IDs
 id_batched_volume = funcT.vmap(volume, in_dims=(0, None))
 
 

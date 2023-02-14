@@ -1,6 +1,9 @@
+# %%
 import torch as t
 import functorch as funcT
 import sys
+from operator import itemgetter
+from cell_typing import CellKind, CellMap
 
 sys.path.insert(0, "../si_model")
 from periodic_padding import periodic_padding
@@ -64,8 +67,7 @@ def calc_adh_energy(
     batch: t.Tensor,
     target_center: t.Tensor,
     target_contacts: t.Tensor,
-    cell_bg_penalty: t.Tensor,
-    cell_cell_penalty: t.Tensor,
+    adhesive_costs: t.Tensor,
 ) -> t.Tensor:
     """HELPER-FUNCTION: Calculate the adhesive energy between <target_center> and its <target_contacts>,
     using the number of contact points and the penalties per contact <cell_bg_penalty>, <cell_cell_penalty>,
@@ -85,35 +87,31 @@ def calc_adh_energy(
     adhesive_contacts = contact_batched_adhesion(batch, target_center, target_contacts)
 
     # prep penalty vector,
-    # NOTE: we halve the cell_cell penalty, as the mirrored calculation is bound to appear.
+    # NOTE: we halve the cell_cell penalties, as the mirrored calculation is bound to appear.
     # I.e. when calculating the adhesion energy, we will calculate it for both (1, 3) and (3, 1).
     # This holds true for all cell_cell contacts. Needs to be revised if we have to apply a different
     # penalty depending on (source, target) combination.
-    if cell_cell_penalty:
-        cell_cell_penalty /= 2
-    if target_contacts.size()[0] == 1:
-        penalties = cell_bg_penalty
-    elif cell_cell_penalty.size()[0] >= 1 and target_contacts.size()[0] > 1:
-        penalties = t.cat(
-            (cell_bg_penalty, cell_cell_penalty.repeat(target_contacts.size()[0] - 1))
-        )
+    if t.numel(adhesive_costs) > 1:
+        adhesive_costs[1:] /= 2.0
+        return t.sum(adhesive_contacts * adhesive_costs.unsqueeze(0).T, dim=0)
     else:
-        penalties = t.cat((cell_bg_penalty, cell_cell_penalty))
-
-    return t.sum(adhesive_contacts * penalties.unsqueeze(0).T, dim=0)
+        return t.sum(adhesive_contacts * adhesive_costs, dim=0)
 
 
 # Vectorize the <calc_adh_energy> function, such that it can be applied for a batch of <target_center>, <target_contacts>
 # combinations
-centroid_batched_adh_energy = funcT.vmap(
-    calc_adh_energy, in_dims=(None, 0, 0, None, None)
-)
+centroid_batched_adh_energy = funcT.vmap(calc_adh_energy, in_dims=(None, 0, 0, 0))
+
+
+def get_penalties(cell_id, cell_contacts, cell_map):
+    cell_type = cell_map.get_item(cell_id.int().item())
+    penalties = itemgetter(*cell_contacts.int().tolist())(cell_type.adhesion_cost)
+    return penalties
 
 
 def adhesion_energy(
     batch: t.Tensor,
-    cell_bg_penalty: t.Tensor,
-    cell_cell_penalty: t.Tensor,
+    cell_map: t.Tensor,
 ) -> t.Tensor:
     """Calculate the adhesive energy for a batch of CPM grids.
 
@@ -127,8 +125,6 @@ def adhesion_energy(
     """
     # ensure correct data type of the tensors
     batch = batch.float()
-    if cell_cell_penalty:
-        cell_cell_penalty = cell_cell_penalty.float()
     # define an unfolding operator
     unfold_transform = t.nn.Unfold(kernel_size=3)
     # provide a periodic torus padding to the grid
@@ -144,18 +140,89 @@ def adhesion_energy(
     # make a list of target contacts for each cell_ID
     target_contacts = t.tensor(
         [
-            (t.tensor(0.0), *cell_IDs[1 : i + 1], *cell_IDs[i + 2 :])
+            (*cell_IDs[: i + 1], *cell_IDs[i + 2 :])
             for i in range(cell_IDs[1:].size()[0])
+        ]
+    )
+
+    penalties = t.tensor(
+        [
+            get_penalties(
+                cell_id=id, cell_contacts=target_contacts[idx], cell_map=cell_map
+            )
+            for idx, id in enumerate(cell_IDs[1:])
         ]
     )
 
     return t.sum(
         centroid_batched_adh_energy(
-            batch_reshaped,
-            cell_IDs[1:],
-            target_contacts,
-            cell_bg_penalty,
-            cell_cell_penalty,
+            batch_reshaped, cell_IDs[1:], target_contacts, penalties
         ),
         dim=0,
     )
+
+
+# %%
+grid = t.zeros((2, 5, 5))
+grid[0, 1, 1] = 2
+grid[0, 1, 2] = 1
+grid[0, 1, 3] = 1
+grid[0, 2, 0] = 2
+grid[0, 2, 1] = 1
+grid[0, 2, 2] = 1
+grid[0, 2, 3] = 1
+grid[0, 3, 1] = 2
+grid[0, 3, 2] = 1
+grid[0, 3, 3] = 1
+
+cell1_adhesion = {0: 34.0, 1: 56.0, 2: 56.0}
+cell1 = CellKind(
+    type_id=1,
+    target_perimeter=None,
+    target_volume=None,
+    lambda_volume=None,
+    adhesion_cost=cell1_adhesion,
+)
+
+cell2_adhesion = {0: 34.0, 1: 56.0, 2: 56.0}
+cell2 = CellKind(
+    type_id=2,
+    target_perimeter=None,
+    target_volume=None,
+    lambda_volume=None,
+    adhesion_cost=cell2_adhesion,
+)
+cell_map = CellMap()
+cell_map.add(cell_id=1, cell_type=cell2)
+cell_map.add(cell_id=2, cell_type=cell2)
+
+adhesive_energy = adhesion_energy(grid, cell_map)
+print(adhesive_energy)
+# %%
+"""
+[   [0, 0, 0, 0, 0]
+    [0, 0, 1, 0, 0]
+    [0, 1, 1, 1, 0]
+    [0, 0, 1, 0, 0]
+    [0, 0, 0, 0, 0]   ]
+"""
+grid = t.zeros((1, 5, 5))
+grid[0, 2, 1] = 1
+grid[0, 2, 2] = 1
+grid[0, 2, 3] = 1
+grid[0, 1, 2] = 1
+grid[0, 3, 2] = 1
+
+cell1_adhesion = {0: t.tensor(25.0)}
+cell1 = CellKind(
+    type_id=1,
+    target_perimeter=None,
+    target_volume=None,
+    lambda_volume=None,
+    adhesion_cost=cell1_adhesion,
+)
+cell_map = CellMap()
+cell_map.add(cell_id=1, cell_type=cell1)
+
+adhesion_energy(grid, cell_map)
+# %%

@@ -8,10 +8,14 @@ class CellKind:
     a cell of a given type.
     """
 
-    def __init__(self, target_perimeter, target_volume, lambda_volume):
+    def __init__(
+        self, type_id, target_perimeter, target_volume, lambda_volume, adhesion_cost
+    ):
         self.target_perimeter = target_perimeter
         self.target_volume = target_volume
         self.lambda_volume = lambda_volume
+        self.adhesion_cost = adhesion_cost
+        self.type_id = type_id
 
 
 class CellMap:
@@ -28,6 +32,9 @@ class CellMap:
 
     def get_map(self):
         return self.map
+
+    def get_item(self, id: int):
+        return self.map[id]
 
     def edit_entry(self, cell_id: CellKind, cell_type: CellKind):
         self.map[cell_id] = cell_type
