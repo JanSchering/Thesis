@@ -82,8 +82,8 @@ def perimeter_energy(batch: t.Tensor, cell_map: CellMap):
     # proceeding calculations as it shouldn't influence the Hamiltonian
     cell_perimeters = id_batched_perimeter(batch_reshaped, cell_IDs).T
 
-    print(cell_IDs.size())
-    if cell_IDs.size()[0] == 1:
+    # prep tensor of target perimeters
+    if t.numel(cell_IDs) == 1:
         target_perimeters = cell_map.get_map()[
             cell_IDs[0].int().item()
         ].target_perimeter
@@ -97,5 +97,19 @@ def perimeter_energy(batch: t.Tensor, cell_map: CellMap):
             ]
         )
 
+    # prep tensor of perimeter costs
+    if t.numel(cell_IDs) == 1:
+        lambda_perimeters = cell_map.get_item(
+            cell_IDs[0].int().item()).lambda_perimeter
+    else:
+        lambda_perimeters = t.tensor(
+            [
+                cell_params.lambda_perimeter
+                for cell_params in itemgetter(*cell_IDs.int().tolist())(
+                    cell_map.get_map()
+                )
+            ]
+        )
+
     # take the square difference between current perimeter and target for every cell and sum up the result
-    return t.sum((cell_perimeters - target_perimeters) ** 2, dim=1)
+    return t.sum(((cell_perimeters - target_perimeters) ** 2) * lambda_perimeters, dim=1)

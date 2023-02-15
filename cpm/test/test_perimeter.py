@@ -35,6 +35,7 @@ def test_perimeter_energy_1():
     test_cellkind = CellKind(
         type_id=1,
         target_perimeter=t.tensor(16.0),
+        lambda_perimeter=t.tensor(0.5),
         target_volume=None,
         lambda_volume=None,
         adhesion_cost=None,
@@ -45,7 +46,7 @@ def test_perimeter_energy_1():
 
     h_perim = perimeter_energy(batch, cell_map=test_cellmap)
 
-    assert t.isclose(h_perim, t.tensor(4.0))
+    assert t.isclose(h_perim, t.tensor(4.0 * 0.5))
 
 
 def test_perimeter_2():
@@ -88,6 +89,7 @@ def test_perimeter_energy_2():
     test_cellkind1 = CellKind(
         type_id=1,
         target_perimeter=t.tensor(2.0),
+        lambda_perimeter=t.tensor(10.),
         target_volume=None,
         lambda_volume=None,
         adhesion_cost=None,
@@ -95,6 +97,7 @@ def test_perimeter_energy_2():
     test_cellkind2 = CellKind(
         type_id=2,
         target_perimeter=t.tensor(5.0),
+        lambda_perimeter=t.tensor(0.1),
         target_volume=None,
         lambda_volume=None,
         adhesion_cost=None,
@@ -106,4 +109,12 @@ def test_perimeter_energy_2():
 
     h_perims = perimeter_energy(grid, cell_map=test_cellmap)
 
-    assert t.all(t.isclose(h_perims, t.tensor((901.0, 29.0))))
+    assert t.all(t.isclose(
+        h_perims,
+        t.tensor(
+            (
+                (28. - 2.)**2 * 10. + (20. - 5.) ** 2 * 0.1,
+                (0. - 2.)**2 * 10. + (0. - 5.)**2 * 0.1
+            )
+        )
+    ))

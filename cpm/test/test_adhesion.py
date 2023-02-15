@@ -1,10 +1,10 @@
+from cell_typing import CellKind, CellMap
+from adhesion_diff import adhesion_energy
+from adhesion import contact_points, adhesion
+import torch as t
 import sys
 
 sys.path.insert(0, "../")
-import torch as t
-from adhesion import contact_points, adhesion
-from adhesion_diff import adhesion_energy
-from cell_typing import CellKind, CellMap
 
 
 def test_adh_energy_1():
@@ -40,6 +40,7 @@ def test_adh_energy_1():
     cell1 = CellKind(
         type_id=1,
         target_perimeter=None,
+        lambda_perimeter=None,
         target_volume=None,
         lambda_volume=None,
         adhesion_cost=cell1_adhesion,
@@ -49,6 +50,7 @@ def test_adh_energy_1():
     cell2 = CellKind(
         type_id=2,
         target_perimeter=None,
+        lambda_perimeter=None,
         target_volume=None,
         lambda_volume=None,
         adhesion_cost=cell2_adhesion,
@@ -83,6 +85,7 @@ def test_adh_energy_2():
     cell1 = CellKind(
         type_id=1,
         target_perimeter=None,
+        lambda_perimeter=None,
         target_volume=None,
         lambda_volume=None,
         adhesion_cost=cell1_adhesion,
@@ -131,14 +134,18 @@ def test_adh_energy_3():
     penalties_2 = {0: 40, 1: 50, 3: 60}
     penalties_3 = {0: 70, 1: 80, 2: 90}
 
-    assert adhesion(grid, cell_id=1, penalties=penalties_1) == 25 * 10 + 9 * 20 + 6 * 30
-    assert adhesion(grid, cell_id=2, penalties=penalties_2) == 10 * 40 + 9 * 50 + 1 * 60
-    assert adhesion(grid, cell_id=3, penalties=penalties_3) == 9 * 70 + 6 * 80 + 1 * 90
+    assert adhesion(grid, cell_id=1, penalties=penalties_1) == 25 * \
+        10 + 9 * 20 + 6 * 30
+    assert adhesion(grid, cell_id=2, penalties=penalties_2) == 10 * \
+        40 + 9 * 50 + 1 * 60
+    assert adhesion(grid, cell_id=3, penalties=penalties_3) == 9 * \
+        70 + 6 * 80 + 1 * 90
 
     cell1_adhesion = {0: t.tensor(10.0), 1: t.tensor(30.0)}
     cell1 = CellKind(
         type_id=1,
         target_perimeter=None,
+        lambda_perimeter=None,
         target_volume=None,
         lambda_volume=None,
         adhesion_cost=cell1_adhesion,

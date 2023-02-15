@@ -9,9 +9,10 @@ class CellKind:
     """
 
     def __init__(
-        self, type_id, target_perimeter, target_volume, lambda_volume, adhesion_cost
+        self, type_id, target_perimeter, lambda_perimeter, target_volume, lambda_volume, adhesion_cost
     ):
         self.target_perimeter = target_perimeter
+        self.lambda_perimeter = lambda_perimeter
         self.target_volume = target_volume
         self.lambda_volume = lambda_volume
         self.adhesion_cost = adhesion_cost
