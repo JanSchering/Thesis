@@ -1,11 +1,8 @@
 # %%
 import torch as t
 import functorch as funcT
-import sys
 from operator import itemgetter
 from cell_typing import CellKind, CellMap
-
-sys.path.insert(0, "../si_model")
 from periodic_padding import periodic_padding
 
 

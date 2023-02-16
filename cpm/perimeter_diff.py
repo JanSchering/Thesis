@@ -1,11 +1,9 @@
-from periodic_padding import periodic_padding
 import torch as t
 import functorch as funcT
 import sys
 from operator import itemgetter
 from cell_typing import CellMap
-
-sys.path.insert(0, "../si_model")
+from periodic_padding import periodic_padding
 
 
 def row_contacts(row: t.Tensor, target: t.Tensor) -> t.Tensor:
@@ -99,8 +97,7 @@ def perimeter_energy(batch: t.Tensor, cell_map: CellMap):
 
     # prep tensor of perimeter costs
     if t.numel(cell_IDs) == 1:
-        lambda_perimeters = cell_map.get_item(
-            cell_IDs[0].int().item()).lambda_perimeter
+        lambda_perimeters = cell_map.get_item(cell_IDs[0].int().item()).lambda_perimeter
     else:
         lambda_perimeters = t.tensor(
             [
@@ -112,4 +109,6 @@ def perimeter_energy(batch: t.Tensor, cell_map: CellMap):
         )
 
     # take the square difference between current perimeter and target for every cell and sum up the result
-    return t.sum(((cell_perimeters - target_perimeters) ** 2) * lambda_perimeters, dim=1)
+    return t.sum(
+        ((cell_perimeters - target_perimeters) ** 2) * lambda_perimeters, dim=1
+    )

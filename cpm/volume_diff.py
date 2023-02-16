@@ -37,8 +37,6 @@ def volume_energy(
     """
     cell_IDs = t.unique(batch)[1:]
 
-    print(cell_IDs)
-
     if cell_IDs.size()[0] == 1:
         target_cellkind = cell_map.get_map()[cell_IDs[0].int().item()]
         target_vol = target_cellkind.target_volume.unsqueeze(0)
@@ -48,15 +46,8 @@ def volume_energy(
         target_vol = t.tensor([c.target_volume for c in target_cellkind])
         lambda_vol = t.tensor([c.lambda_volume for c in target_cellkind])
 
-    print(target_vol)
-    print(lambda_vol)
-    print(id_batched_volume(cell_IDs, batch))
     volumes = id_batched_volume(cell_IDs, batch).T
 
-    print(volumes)
-
     mse_volume = (volumes - target_vol) ** 2
-
-    print(mse_volume)
 
     return t.sum(mse_volume.T * lambda_vol.unsqueeze(0).T, dim=0)
