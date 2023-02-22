@@ -64,7 +64,8 @@ def perimeter_energy(batch: t.Tensor, cell_map: CellMap):
     # ensure that the batch is using float
     batch = batch.float()
     # get the IDs of the cells on the grid
-    cell_IDs = t.unique(batch)[1:]
+    with t.no_grad():
+        cell_IDs = t.unique(batch)[1:]
     # define an unfolding operator
     unfold_transform = t.nn.Unfold(kernel_size=3)
     # provide a periodic torus padding to the grid

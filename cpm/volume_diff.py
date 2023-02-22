@@ -35,7 +35,8 @@ def volume_energy(
     Returns:
         t.Tensor: The volume energy for each of the CPM lattices.
     """
-    cell_IDs = t.unique(batch)[1:]
+    with t.no_grad():
+        cell_IDs = t.unique(batch)[1:]
 
     if cell_IDs.size()[0] == 1:
         target_cellkind = cell_map.get_map()[cell_IDs[0].int().item()]

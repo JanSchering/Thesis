@@ -108,7 +108,9 @@ def get_penalties(cell_id, cell_contacts, cell_map):
     # cell-bg and 1 other, need to seperate the case because of itemgetter
     elif t.numel(cell_contacts) == 2:
         contact_type = cell_map.get_item(cell_contacts[1].int().item()).type_id
-        penalties = (cell_type.adhesion_cost[0], cell_type.adhesion_cost[contact_type])
+        penalties = t.stack(
+            (cell_type.adhesion_cost[0], cell_type.adhesion_cost[contact_type])
+        )
     # more than two combinations
     else:
         contact_types = [
@@ -117,7 +119,7 @@ def get_penalties(cell_id, cell_contacts, cell_map):
                 cell_map.get_map()
             )
         ]
-        penalties = itemgetter(0, *contact_types)(cell_type.adhesion_cost)
+        penalties = t.stack(itemgetter(0, *contact_types)(cell_type.adhesion_cost))
 
     return penalties
 
@@ -149,7 +151,8 @@ def adhesion_energy(
     # turn each convolution block into a row
     batch_reshaped = unfolded_batch.permute(0, 2, 1)
     # get a list of all cells on the grid
-    cell_IDs = t.unique(batch)
+    with t.no_grad():
+        cell_IDs = t.unique(batch)
     # make a list of target contacts for each cell_ID
     target_contacts = t.tensor(
         [
@@ -158,7 +161,7 @@ def adhesion_energy(
         ]
     )
 
-    penalties = t.tensor(
+    penalties = t.vstack(
         [
             get_penalties(
                 cell_id=id, cell_contacts=target_contacts[idx], cell_map=cell_map

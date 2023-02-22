@@ -36,7 +36,7 @@ def test_adh_energy_1():
     batch[0, 3, 2] = 1
     batch[0, 3, 3] = 1
 
-    cell1_adhesion = {0: 34.0, 1: 56.0, 2: 56.0}
+    cell1_adhesion = {0: t.tensor(34.0), 1: t.tensor(56.0), 2: t.tensor(56.0)}
     cell1 = CellKind(
         type_id=1,
         target_perimeter=None,
@@ -46,7 +46,7 @@ def test_adh_energy_1():
         adhesion_cost=cell1_adhesion,
     )
 
-    cell2_adhesion = {0: 34.0, 1: 56.0, 2: 56.0}
+    cell2_adhesion = {0: t.tensor(34.0), 1: t.tensor(56.0), 2: t.tensor(56.0)}
     cell2 = CellKind(
         type_id=2,
         target_perimeter=None,
@@ -134,12 +134,9 @@ def test_adh_energy_3():
     penalties_2 = {0: 40, 1: 50, 3: 60}
     penalties_3 = {0: 70, 1: 80, 2: 90}
 
-    assert adhesion(grid, cell_id=1, penalties=penalties_1) == 25 * \
-        10 + 9 * 20 + 6 * 30
-    assert adhesion(grid, cell_id=2, penalties=penalties_2) == 10 * \
-        40 + 9 * 50 + 1 * 60
-    assert adhesion(grid, cell_id=3, penalties=penalties_3) == 9 * \
-        70 + 6 * 80 + 1 * 90
+    assert adhesion(grid, cell_id=1, penalties=penalties_1) == 25 * 10 + 9 * 20 + 6 * 30
+    assert adhesion(grid, cell_id=2, penalties=penalties_2) == 10 * 40 + 9 * 50 + 1 * 60
+    assert adhesion(grid, cell_id=3, penalties=penalties_3) == 9 * 70 + 6 * 80 + 1 * 90
 
     cell1_adhesion = {0: t.tensor(10.0), 1: t.tensor(30.0)}
     cell1 = CellKind(
