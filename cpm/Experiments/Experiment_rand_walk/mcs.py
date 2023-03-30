@@ -63,8 +63,8 @@ def MCS(batch, checkerboard_sets, target_vol, temperature):
             grid_dim=batch.shape,
             tile_dim=(2, 2),
         )
-        # print(f"coordinates of the source pixels on the grid: \n {grid_coords_src}")
-        # print(f"source pixels: {batch[0, grid_coords_src[:,0], grid_coords_src[:,1]]}")
+        print(f"coordinates of the source pixels on the grid: \n {grid_coords_src}")
+        print(f"source pixels: {batch[0, grid_coords_src[:,0], grid_coords_src[:,1]]}")
 
         grid_coords_tgt = tile_coords2grid_coords(
             tile_idx=tile_idxs,
@@ -73,20 +73,29 @@ def MCS(batch, checkerboard_sets, target_vol, temperature):
             tile_dim=(2, 2),
         )
 
+        print(f"coordinates of the target pixels on the grid: \n {grid_coords_tgt}")
+        print(f"target pixels: {batch[0, grid_coords_tgt[:,0], grid_coords_tgt[:,1]]}")
+
+        vol_changes = (-1 * tiles[range(tiles.shape[0]), tgt_y, tgt_x]) + tiles[
+            range(tiles.shape[0]), src_y, src_x
+        ]
+        print("vol changes", vol_changes)
+        total_vol_change = t.sum(vol_changes)
+        adjusted_vol = cur_vol + total_vol_change
+
         if t.all(
             batch[0, grid_coords_src[:, 0], grid_coords_src[:, 1]]
             == batch[0, grid_coords_tgt[:, 0], grid_coords_tgt[:, 1]]
         ):
-            # print("no match")
-            pass
+            print("all source IDs equivalent to target IDs")
+        elif adjusted_vol > 2 or adjusted_vol <= 0:
+            print("Changes would violate the hard constraints")
         else:
             # print("on_tile source pixel coords per grid: \n",t.cat((src_x.unsqueeze(0), src_y.unsqueeze(0)), dim=0).T)
             # print("on_tile target pixel coords per grid: \n", t.cat((tgt_x.unsqueeze(0), tgt_y.unsqueeze(0)), dim=0).T)
 
-            update_probability = p_update(
-                tiles, cur_vol, target_vol, temperature, (src_x, src_y), (tgt_x, tgt_y)
-            )
-            # print(f"update probability: {update_probability}")
+            update_probability = p_update(adjusted_vol, target_vol, temperature)
+            print(f"update probability: {update_probability}")
 
             # print(f"coordinates of the target pixels on the grid: \n {grid_coords_tgt}")
             # print(f"target pixels: {batch[0, grid_coords_tgt[:,0], grid_coords_tgt[:,1]]}")
@@ -103,11 +112,14 @@ def MCS(batch, checkerboard_sets, target_vol, temperature):
                 ),
                 hard=True,
             )
-            # print(one_hot)
+            print(one_hot)
 
             upd_val = (
                 one_hot[0] * batch[0, grid_coords_src[:, 0], grid_coords_src[:, 1]]
             )
+
+            print(upd_val)
+
             batch[0, grid_coords_tgt[:, 0], grid_coords_tgt[:, 1]] *= one_hot[1]
             batch[0, grid_coords_tgt[:, 0], grid_coords_tgt[:, 1]] += upd_val
 
