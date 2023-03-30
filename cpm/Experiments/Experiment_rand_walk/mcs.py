@@ -10,7 +10,8 @@ def MCS(batch, checkerboard_sets, target_vol, temperature):
 
     steps = []
     for c, chkboard_set in enumerate(checkerboard_sets):
-        # print(f"-------------- Set {c} ---------------------")
+        print(f"-------------- Set {c} ---------------------")
+        res_batch = t.zeros(*batch.shape)
         tile_idxs = t.tensor(
             [
                 (chkboard_set[0][i, j], chkboard_set[1][i, j])
@@ -90,6 +91,9 @@ def MCS(batch, checkerboard_sets, target_vol, temperature):
             print("all source IDs equivalent to target IDs")
         elif adjusted_vol > 2 or adjusted_vol <= 0:
             print("Changes would violate the hard constraints")
+        elif cur_vol == 2 and total_vol_change == -1:
+            print("Negative Hamiltonian, accepted")
+            res_batch[0, grid_coords_tgt[:, 0], grid_coords_tgt[:, 1]] += vol_changes
         else:
             # print("on_tile source pixel coords per grid: \n",t.cat((src_x.unsqueeze(0), src_y.unsqueeze(0)), dim=0).T)
             # print("on_tile target pixel coords per grid: \n", t.cat((tgt_x.unsqueeze(0), tgt_y.unsqueeze(0)), dim=0).T)
@@ -114,15 +118,13 @@ def MCS(batch, checkerboard_sets, target_vol, temperature):
             )
             print(one_hot)
 
-            upd_val = (
-                one_hot[0] * batch[0, grid_coords_src[:, 0], grid_coords_src[:, 1]]
-            )
+            upd_val = one_hot[0] * vol_changes
 
             print(upd_val)
 
-            batch[0, grid_coords_tgt[:, 0], grid_coords_tgt[:, 1]] *= one_hot[1]
-            batch[0, grid_coords_tgt[:, 0], grid_coords_tgt[:, 1]] += upd_val
+            res_batch[0, grid_coords_tgt[:, 0], grid_coords_tgt[:, 1]] += upd_val
 
+        batch += res_batch
         steps.append(batch.detach().squeeze().clone().numpy())
 
     return batch, steps
