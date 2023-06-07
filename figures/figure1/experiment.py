@@ -1,22 +1,27 @@
-from distance_funcs import mean_sq_distance
-from likelihoods import spread_likelihood, transition_likelihood, neg_log_likelihood
-from utils import chop_and_shuffle_data, pre_process
-from model import init_grids, model
-from tqdm import tqdm
-import imageio
-from matplotlib import ticker
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import numpy as np
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-from torch.distributions import uniform, normal
-import torch as t
-from typing import Tuple
+# ensure path to si modules
 import sys
-
 sys.path.insert(0, "../../si_model")
+# import modules
+import torch as t
+from torch.distributions import uniform, normal
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import imageio
+from tqdm import tqdm
+from model import init_grids, model
+from utils import chop_and_shuffle_data, pre_process
+from likelihoods import spread_likelihood, transition_likelihood, neg_log_likelihood
+from distance_funcs import mean_sq_distance
 
+
+mpl.rcParams['axes.linewidth'] = 1
+mpl.rcParams["text.usetex"] = True
+mpl.rcParams["font.family"] = "Helvetica"
+mpl.rcParams["font.size"] = 12
+mpl.rcParams["text.latex.preamble"] = "\\usepackage{amssymb}"
 
 ###
 #   Set a random seed for torch and numpy
@@ -65,7 +70,7 @@ class CustomDataset(Dataset):
                     beta = t.clip(normal.Normal(
                         beta_mu, beta_sigma).sample(), 0, 1)
                     sequences[seq_idx, step_idx, :, :] = sequence
-                    sequence = model_gumbel(sequence, beta)
+                    sequence = model(sequence, beta)
                     self.betas.append(beta.detach().cpu())
 
             dataset = chop_and_shuffle_data(sequences, shuffle=False)
