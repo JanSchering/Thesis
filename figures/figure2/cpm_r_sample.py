@@ -41,26 +41,34 @@ if "cpm_r_sample" not in listdir(data_path):
 
 temperature = t.tensor(4., device=device)
 target_vol = 1.
-grid_size = 16
+grid_size = 512
 batch = t.zeros(1,grid_size,grid_size, device=device)
 batch[:,grid_size//2,grid_size//2] += 1
 
-num_steps = 5000
+num_steps = 100_000
+
+col_idxs = np.tile(np.arange(grid_size), (grid_size,1)) 
+row_idxs = np.tile(np.arange(grid_size), (grid_size,1)).T
+
+def centroid(state):
+    x = np.sum(state * col_idxs) / np.sum(state)
+    y = np.sum(state * row_idxs) / np.sum(state)
+    return (x,y)
 
 ###
 #   Run simulation
 ###
-
-states = np.zeros((num_steps+1,grid_size,grid_size))
-states[0] = batch[0]
+centroids = np.zeros((num_steps+1,2))
+centroids[0] = centroid(batch.detach().clone().cpu().numpy())
 for i in tqdm(range(num_steps)):
     batch = model(batch, temperature)
     if t.any(t.sum(batch, dim=(-1,-2)) == 0) or t.any(t.sum(batch, dim=(-1,-2)) > 2):
         print("ISSUE DETECTED, STOP SIM")
         break
     else:
-        states[i+1] = batch[0].detach().clone().cpu().numpy()
+        centroids[i+1] = centroid(batch.detach().clone().cpu().numpy())
 
-imgs = [Image.fromarray((1-states[i])*255) for i in range(states.shape[0])]
-imgs[0].save(path.join(cpm_r_sample_path, "vis.gif"), save_all=True, append_images=imgs[1:], duration=10, loop=100)
-np.save(path.join(cpm_r_sample_path, "sequence.npy"), states)
+#imgs = [Image.fromarray((1-states[i])*255) for i in range(states.shape[0])]
+#imgs[0].save(path.join(cpm_r_sample_path, "vis.gif"), save_all=True, append_images=imgs[1:], duration=10, loop=100)
+np.save(path.join(cpm_r_sample_path, f"centroids.npy"), centroids)
+    
