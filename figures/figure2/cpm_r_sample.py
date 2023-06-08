@@ -8,6 +8,7 @@ import numpy as np
 import random
 
 from model import model
+from PIL import Image
 
 ###
 #   Set random seeds
@@ -38,13 +39,13 @@ if "cpm_r_sample" not in listdir(data_path):
 #   Set simulation parameters
 ###
 
-temperature = t.tensor(1., device=device)
+temperature = t.tensor(4., device=device)
 target_vol = 1.
-grid_size = 32
+grid_size = 16
 batch = t.zeros(1,grid_size,grid_size, device=device)
 batch[:,grid_size//2,grid_size//2] += 1
 
-num_steps = 1000
+num_steps = 5000
 
 ###
 #   Run simulation
@@ -59,5 +60,7 @@ for i in tqdm(range(num_steps)):
         break
     else:
         states[i+1] = batch[0].detach().clone().cpu().numpy()
-        
+
+imgs = [Image.fromarray((1-states[i])*255) for i in range(states.shape[0])]
+imgs[0].save(path.join(cpm_r_sample_path, "vis.gif"), save_all=True, append_images=imgs[1:], duration=10, loop=100)
 np.save(path.join(cpm_r_sample_path, "sequence.npy"), states)
