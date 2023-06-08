@@ -42,23 +42,27 @@ if "cpm_r_sample" not in listdir(data_path):
 temperature = t.tensor(4., device=device)
 target_vol = 1.
 grid_size = 512
-batch = t.zeros(1,grid_size,grid_size, device=device)
-batch[:,grid_size//2,grid_size//2] += 1
+batch = t.zeros(5,grid_size,grid_size, device=device)
+batch[0,grid_size//2,grid_size//2] += 1
+batch[1,grid_size//4,grid_size//4] += 1
+batch[2,grid_size//4,(grid_size//4)*3] += 1 
+batch[3,(grid_size//4)*3,grid_size//4] += 1
+batch[4,(grid_size//4)*3,(grid_size//4)*3] += 1
 
-num_steps = 100_000
+num_steps = 20_000
 
 col_idxs = np.tile(np.arange(grid_size), (grid_size,1)) 
 row_idxs = np.tile(np.arange(grid_size), (grid_size,1)).T
 
 def centroid(state):
-    x = np.sum(state * col_idxs) / np.sum(state)
-    y = np.sum(state * row_idxs) / np.sum(state)
-    return (x,y)
+    x = np.sum(state * col_idxs, axis=(-1,-2)) / np.sum(state, axis=(-1,-2))
+    y = np.sum(state * row_idxs, axis=(-1,-2)) / np.sum(state, axis=(-1,-2))
+    return np.hstack([x[:, np.newaxis],y[:, np.newaxis]])
 
 ###
 #   Run simulation
 ###
-centroids = np.zeros((num_steps+1,2))
+centroids = np.zeros((num_steps+1,5,2))
 centroids[0] = centroid(batch.detach().clone().cpu().numpy())
 for i in tqdm(range(num_steps)):
     batch = model(batch, temperature)
