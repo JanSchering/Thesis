@@ -41,7 +41,7 @@ if "cpm_r_sample" not in listdir(data_path):
 
 temperature = t.tensor(4., device=device)
 target_vol = 1.
-grid_size = 512
+grid_size = 128
 batch = t.zeros(5,grid_size,grid_size, device=device)
 batch[0,grid_size//2,grid_size//2] += 1
 batch[1,grid_size//4,grid_size//4] += 1
@@ -49,7 +49,7 @@ batch[2,grid_size//4,(grid_size//4)*3] += 1
 batch[3,(grid_size//4)*3,grid_size//4] += 1
 batch[4,(grid_size//4)*3,(grid_size//4)*3] += 1
 
-num_steps = 20_000
+num_steps = 100_000
 
 col_idxs = np.tile(np.arange(grid_size), (grid_size,1)) 
 row_idxs = np.tile(np.arange(grid_size), (grid_size,1)).T
