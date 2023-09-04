@@ -114,7 +114,7 @@ def diffuse(state: t.Tensor, N: int, D_A, D_B) -> t.Tensor:
         *[D_A * (np.sqrt(2) - 1) / 4 for i in range(4)],
         *[D_A * (np.sqrt(2) - 1) * np.sqrt(2) / 4 for i in range(4)],
     ]
-    direction_A = np.random.choice(list(Direction2D), p=p_A)
+    direction_A = np.random.choice(list(Direction2D), p=p_A.cpu())
     E[0] = translate(E[0], direction_A)
 
     # translate the excited B species
@@ -123,7 +123,7 @@ def diffuse(state: t.Tensor, N: int, D_A, D_B) -> t.Tensor:
         *[D_B * (np.sqrt(2) - 1) / 4 for i in range(4)],
         *[D_B * (np.sqrt(2) - 1) * np.sqrt(2) / 4 for i in range(4)],
     ]
-    direction_B = np.random.choice(list(Direction2D), p=p_B)
+    direction_B = np.random.choice(list(Direction2D), p=p_B.cpu())
     E[1] = translate(E[1], direction_B)
 
     # accomodate the translated particles at their new positions

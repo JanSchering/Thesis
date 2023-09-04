@@ -35,6 +35,7 @@ def model_STE(grids: t.Tensor, beta: t.Tensor) -> t.Tensor:
     healthy_mask = 1 - grids
     # calculate the likelihood of spread
     likelihoods = spread_likelihood(grids, beta)
+    print(t.unique(likelihoods))
     # compare each likelihood to a random value ~ U(0,1) to get the residual values
     if grids.is_cuda:
         residuals = likelihoods - t.rand(*grids.shape).cuda()

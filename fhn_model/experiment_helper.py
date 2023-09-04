@@ -97,7 +97,7 @@ def generate_sequence(
         data_path = path.join(getcwd(), "data", timestamp)
         os.mkdir(data_path)
         os.mkdir(path.join(data_path, "batch_0"))
-        t.save(grid, path.join(data_path, "batch_0", "0.pt"))
+        t.save(grid.cpu(), path.join(data_path, "batch_0", "0.pt"))
         batch_counter = 0
     # initialize the sequence tensor if necessary
     if create_seq:
@@ -157,7 +157,7 @@ def generate_sequence(
                 batch_counter += 1
                 os.mkdir(path.join(data_path, f"batch_{batch_counter}"))
             t.save(
-                grid,
+                grid.cpu(),
                 path.join(data_path, f"batch_{batch_counter}", f"{(i+1) % 100}.pt"),
             )
 
