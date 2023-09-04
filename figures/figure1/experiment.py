@@ -129,15 +129,17 @@ num_sequences = 100
 steps_per_sequence = 30
 grid_size = 64
 
-training_data = CustomDataset(
-    beta_mu=beta_mu,
-    beta_sigma=beta_sigma,
-    num_sequences=num_sequences,
-    steps_per_sequence=steps_per_sequence,
-    grid_size=grid_size,
-)
-training_loader = DataLoader(training_data, batch_size=32, shuffle=True)
-t.save(training_data.data, path.join(data_path, "training_set.pt"))
+# training_data = CustomDataset(
+#    beta_mu=beta_mu,
+#    beta_sigma=beta_sigma,
+#    num_sequences=num_sequences,
+#    steps_per_sequence=steps_per_sequence,
+#    grid_size=grid_size,
+# )
+data = t.load("./data/training_set.pt")
+print(data.shape)
+training_loader = DataLoader(data, batch_size=32, shuffle=True)
+# t.save(training_data.data, path.join(data_path, "training_set.pt"))
 
 ###
 #   Visualize sample sequence for the given mu, sigma
@@ -193,7 +195,7 @@ def train_loop(beta, dataloader, optimizer):
     size = len(dataloader.dataset)
     betas = []
     distances = []
-    for batch, (transitions, _) in enumerate(dataloader):
+    for batch, (transitions) in enumerate(dataloader):
         # print(f"------------- {batch} ----------------")
         X = transitions[:, 0]
         Y_obs = transitions[:, 1]
@@ -221,14 +223,15 @@ def train_loop(beta, dataloader, optimizer):
 ###
 #   Run Sampling-based training
 ###
-sample_train = False
+sample_train = True
 
 if sample_train:
     sample_based_path = path.join(data_path, "sample_based")
     if not "sample_based" in listdir(data_path):
         mkdir(sample_based_path)
 
-    beta = uniform.Uniform(t.tensor(0.0), t.tensor(1.0)).sample()
+    # beta = uniform.Uniform(t.tensor(0.0), t.tensor(1.0)).sample()
+    beta = t.tensor(0.79744744)
     beta.requires_grad_()
     lr = 1e-7
     epochs = 50
@@ -242,8 +245,8 @@ if sample_train:
         beta_hist = beta_hist + betas
         dist_hist = dist_hist + distances
 
-    np.save(path.join(sample_based_path, "param_trace.npy"), np.array(beta_hist))
-    np.save(path.join(sample_based_path, "losses.npy"), np.array(dist_hist))
+    np.save(path.join(sample_based_path, "param_trace2.npy"), np.array(beta_hist))
+    np.save(path.join(sample_based_path, "losses2.npy"), np.array(dist_hist))
 
 ###
 #   Define update function using gradient of the likelihood
@@ -275,7 +278,7 @@ def train_epoch(train_loader, beta: t.Tensor, optimizer):
     """
     betas = []
     likelihoods = []
-    for batch, (transitions, _) in enumerate(train_loader):
+    for batch, (transitions) in enumerate(train_loader):
         X = transitions[:, 0]
         Y_obs = transitions[:, 1]
         beta, neg_log_likelihood = update(beta, X, Y_obs, optimizer)
@@ -288,7 +291,7 @@ def train_epoch(train_loader, beta: t.Tensor, optimizer):
 ###
 #   Run Likelihood-based training
 ###
-likelihood_train = False
+likelihood_train = True
 
 if likelihood_train:
     beta = t.tensor(np.load(path.join(sample_based_path, "param_trace.npy"))[0])
@@ -304,42 +307,42 @@ if likelihood_train:
         beta_hist = beta_hist + betas
         likelihood_hist = likelihood_hist + likelihoods
 
-    np.save(path.join(likelihood_based_path, "param_trace.npy"), np.array(beta_hist))
-    np.save(path.join(likelihood_based_path, "losses.npy"), np.array(likelihood_hist))
+    np.save(path.join(likelihood_based_path, "param_trace2.npy"), np.array(beta_hist))
+    np.save(path.join(likelihood_based_path, "losses2.npy"), np.array(likelihood_hist))
 
 ###
 #   Evaluate the likelihood of the dataset for beta=[0,1]
 ###
-likelihood_contour_path = path.join(data_path, "likelihood_contour")
-if not "likelihood_contour" in listdir(data_path):
-    mkdir(likelihood_contour_path)
+# likelihood_contour_path = path.join(data_path, "likelihood_contour")
+# if not "likelihood_contour" in listdir(data_path):
+#    mkdir(likelihood_contour_path)
 
 
-def get_neg_log_l(beta, X, Y_obs):
-    # calculate the spread likelihood for the given beta
-    L = spread_likelihood(X, beta).type(t.double)
-    # calculate the transition likelihood matrix for the given beta
-    P = transition_likelihood(L, X, Y_obs)
-    # calculate the total likelihood of the transition
-    neg_log_l = neg_log_likelihood(P)
-    return neg_log_l
+# def get_neg_log_l(beta, X, Y_obs):
+#    # calculate the spread likelihood for the given beta
+#    L = spread_likelihood(X, beta).type(t.double)
+#    # calculate the transition likelihood matrix for the given beta
+#    P = transition_likelihood(L, X, Y_obs)
+# calculate the total likelihood of the transition
+#    neg_log_l = neg_log_likelihood(P)
+#    return neg_log_l
 
 
-beta_vals = t.linspace(0, 1, 1000)
+# beta_vals = t.linspace(0, 1, 1000)
 
-mean_likelihoods = []
-for beta_val in tqdm(beta_vals):
-    likelihoods = []
-    for i in range(5):
-        for batch, (transitions, _) in enumerate(training_loader):
-            X = transitions[:, 0]
-            Y_obs = transitions[:, 1]
-            likelihood = get_neg_log_l(beta_val, X, Y_obs)
-            # print(likelihood)
-            likelihoods.append(likelihood.detach().numpy())
-    mean_likelihoods.append(np.mean(np.array(likelihoods[likelihoods != float("inf")])))
+# mean_likelihoods = []
+# for beta_val in tqdm(beta_vals):
+#    likelihoods = []
+#    for i in range(5):
+#        for batch, (transitions, _) in enumerate(training_loader):
+#            X = transitions[:, 0]
+#            Y_obs = transitions[:, 1]
+#            likelihood = get_neg_log_l(beta_val, X, Y_obs)
+#            # print(likelihood)
+#            likelihoods.append(likelihood.detach().numpy())
+#    mean_likelihoods.append(np.mean(np.array(likelihoods[likelihoods != float("inf")])))
 
-np.save(path.join(likelihood_contour_path, "beta_vals.npy"), beta_vals.detach().numpy())
-np.save(
-    path.join(likelihood_contour_path, "likelihoods.npy"), np.array(mean_likelihoods)
-)
+# np.save(path.join(likelihood_contour_path, "beta_vals.npy"), beta_vals.detach().numpy())
+# np.save(
+#    path.join(likelihood_contour_path, "likelihoods.npy"), np.array(mean_likelihoods)
+# )
