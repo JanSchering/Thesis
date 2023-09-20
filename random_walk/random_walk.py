@@ -78,7 +78,7 @@ if __name__ == "__main__":
     if show_displacements:
         print("showing Square distance per grid in the batch:")
         print(distances)
-        print(MSD: {msd})
+        print(f"MSD: {msd}")
     else:
         print("showing coordinates of the active pixels:")
         print(get_active_pixel_idx(batch).T)
