@@ -11,3 +11,6 @@
 /fhn_model/Experiments/Experiment_5/im/**/49900.png
 /*/**/*.jpg
 /*/**/*.txt
+!/random_walk/bacteria-37.csv
+!/random_walk/bacteria-RT.csv
+!/random_walk/filtered_data.zip
